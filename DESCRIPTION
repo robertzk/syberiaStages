@@ -7,7 +7,6 @@ Description: Syberia provides an opinionated unified framework for
     founded on convention over configuration and aims to solve the
     problems of classifier-specific data preparation and
     classifier-specific modeling parameters.
-
     syberiaStages is a library of common Syberia stages.
 Authors@R: c(person("Robert", "Krzyzanowski",
     email = "technoguyrob@gmail.com", role = c("aut", "cre")))
