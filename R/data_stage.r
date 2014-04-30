@@ -8,7 +8,6 @@
 #' @export
 data_stage <- function(modelenv, munge_procedure) {
   # preprocess_munge_procedure(munge_procedure)
-  removed_steps <- vapply(munge_procedure, is.trigger, logical(1))
   # TODO: sameAs/importFrom and butWith/except triggers
   # TODO: save trigger
 
