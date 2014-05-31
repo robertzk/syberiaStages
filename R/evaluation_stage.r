@@ -31,6 +31,8 @@ evaluation_stage <- function(evaluation_parameters) {
   stopifnot('output' %in% names(evaluation_parameters))
 
   cutoff <- evaluation_parameters$cutoff %||% 0.5
+  train_percent <- evaluation_parameters$percent %||% 0.8
+  dep_var <- evaluation_parameters$dep_var %||% 'dep_var'
 
   generate_options <- function(modelenv) {
     # TODO: (RK) Remove this to use the IO adapter once that has been written.
@@ -42,14 +44,14 @@ evaluation_stage <- function(evaluation_parameters) {
     raw_data <- stagerunner:::treeSkeleton(
       active_runner()$stages$data)$first_leaf()$object$cached_env$data
 
-    train_percent <- evaluation_parameters$percent %||% 0.8
     validation_rows <- seq(train_percent * nrow(raw_data) + 1, nrow(raw_data))
     validation_data <- raw_data[validation_rows, ]
     score <- modelenv$model_stage$model$predict(validation_data)
 
     modelenv$evaluation_stage$prediction_data <-
-      data.frame(dep_var = test_data[[evaluation_parameters$dep_var %||% 'dep_var']],
+      data.frame(dep_var = validation_data[[dep_var]],
                  score = score, loan_id = validation_data$loan_id)
+   # TODO: (RK) WTF is loan_id doing in a general evaluation stage??
 
     if ('output' %in% names(evaluation_parameters)) {
       write.csv(paste0(prediction, '.csv'), evaluation_parameters$output, row.names = FALSE)
