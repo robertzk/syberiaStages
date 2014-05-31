@@ -12,15 +12,17 @@
 #'
 #'    \itemize{
 #'      \item type. The first element must be a string "regression" or "classification".
+#'      \item output. The prefix of the CSV and PNG to which to output the results
+#'        of the validation. For example, if you put "output/foo", then "output/foo.csv"
+#'        will be a CSV file containing a data.frame with the columns "dep_var",
+#'        "loan_id", and "score", where the latter refers to predicted score. On the other
+#'        hand, "output/foo.png" will contain a decile validation plot of the results.
 #'      \item percent. The percent of the data that was used for training. Currently,
 #'        only sequential splits of training and validation are supported until
 #'        syberia introduces a better mechanism for data partitions. The default is 0.8.
-#'      \item dep_var. The name of the dependent variable in the evaluated data.
+#'      \item dep_var. (Optional) The name of the dependent variable in the evaluated data.
 #'        The default is "dep_var".
-#'      \item prediction_output. The name of the CSV to which to output the results
-#'        of the validation. This will be a data.frame with the columns "dep_var",
-#'       "loan_id", and "score", where the latter refers to predicted score.
-#'      \item cutoff. A cutoff for binary classification predictions: above the
+#'      \item cutoff. (Optional) A cutoff for binary classification predictions: above the
 #'        cutoff means a prediction 1, and otherwise a 0. The default is 0.5.
 #'     }
 #' @export
@@ -32,11 +34,9 @@ evaluation_stage <- function(evaluation_parameters) {
   stopifnot((is.character(type <- evaluation_parameters[[1]]) ||
              is.character(type <- evaluation_parameters$type)) &&
             type %in% c("regression", "classification"))
+  stopifnot('output' %in% names(evaluation_parameters))
 
   cutoff <- evaluation_parameters$cutoff %||% 0.5
-  list(
-       plot.it = TRUE, xlab = c("dep_var = 0", "dep_var = 1"),
-       ylab = c("score = 0", "score = 1"), title = NULL, last = FALSE, nxt = NULL)
 
   generate_options <- function(modelenv) {
     # TODO: (RK) Remove this to use the IO adapter once that has been written.
@@ -57,64 +57,89 @@ evaluation_stage <- function(evaluation_parameters) {
       data.frame(dep_var = test_data[[evaluation_parameters$dep_var %||% 'dep_var']],
                  score = score, loan_id = validation_data$loan_id)
 
-    if ('prediction_output' %in% names(evaluation_parameters)) {
-      write.csv(prediction, evaluation_parameters$prediction_output, row.names = FALSE)
+    if ('output' %in% names(evaluation_parameters)) {
+      write.csv(paste0(prediction, '.csv'), evaluation_parameters$output, row.names = FALSE)
     }
   }
   
   auc <- function(modelenv) {
     require(AUC)
-    auc_result <- with(modelenv$evaluation_stage$options$prediction, {
+    modelenv$evaluation_stage$auc <- with(modelenv$evaluation_stage$prediction_data, {
       list(
         roc = AUC::auc(roc(score, factor(dep_var))),
         accuracy = AUC::auc(accuracy(score, factor(dep_var))),
         sensitivity = AUC::auc(sensitivity(score, factor(dep_var))),
         specificity = AUC::auc(specificity(score, factor(dep_var)))
-      ) })
-    print(auc_result)
+    )})
+    print(modelenv$evaluation_stage$auc)
   }
   
   confusion_matrix <- function(modelenv) {  
-    with(modelenv$evaluation_stage$options, {
-      stopifnot(is.data.frame(prediction) &&
-                  all(c('score', 'dep_var') %in% colnames(prediction)))
-      stopifnot(is.numeric(prediction$score) && is.numeric(prediction$dep_var))
-      
-      prediction$score <- ifelse(prediction$score <= cutoff, 0, 1) # TODO: K-S statistic?
-      categories <- prediction$score * 2 + prediction$dep_var
-      confusion <- matrix(tabulate(1 + categories, 4), nrow = 2)
-      colnames(confusion) <- ylab
-      rownames(confusion) <- xlab
-      if (plot.it) fourfoldplot(confusion, color = c("#CC6666", "#99CC99"),
-                                conf.level = 0, margin = 1, main = title)
-      confusion
-    })
+    confusion_matrix_arguments <- 
+      list(modelenv$evaluation_stage$prediction_data, cutoff,
+           plot.it = TRUE, xlab = c("dep_var = 0", "dep_var = 1"),
+           ylab = c("score = 0", "score = 1"), title = NULL)
+    do.call(confusion_matrix, confusion_matrix_arguments)
   }
   
   validation_plot <- function(modelenv){
     with(modelenv$evaluation_stage$options$prediction, {
-      ordered_postdata <- prediction[order(score), ]
-      xs <- (10*(0:9) + 9) / 100
-      # ys <- tapply(dep_var, rep(1:10, rep(round(nrow(postdata) / 10), 10))[1:nrow(postdata)], mean)
+      ordered_scores <- modelenv$evaluation_stage$prediction_data[
+        order(modelenv$evaluation_stage$prediction_data$score), ]
+      xs <- (10*(0:9) + 9) / 100 # TODO: (RK) Make a parameter for this
       ys <- sapply(xs, function(x) {
-        xrows <- (nrow(ordered_postdata) * max(x - (xs[2] - xs[1]), 0) + 1):(nrow(ordered_postdata) * x)
-        sum(ordered_postdata[xrows, 'dep_var']) / length(xrows)
+        xrows <- seq((nrow(ordered_scores) * max(x - (xs[2] - xs[1]), 0) + 1),
+                     (nrow(ordered_scores) * x))
+        sum(ordered_scores[xrows, 'dep_var']) / length(xrows)
       })
       
-      png(filename = gsub(".csv", "_validation.png", global_modeling_environment$import_stage$file))
+      png(filename = paste0(prediction, '.png'))
       plot(xs, ys, type = 'l', col = 'darkgreen',
-           main = pp('#{output_name} (on new validation data)'),
-           xlab = '% of customers, ordered by model score',
-           ylab = '% of defaults captured',
+           main = 'Dependent variable capture v.s. score deciles',
+           xlab = '% of samples ordered by model score',
+           ylab = '% of dependent variable = 1',
            frame.plot = TRUE, lwd = 3, cex = 2)
       dev.off()
       NULL
     })
   }
   
-  stageRunner$new(modelenv, list('auc' = auc, 'confusion matrix' = confusion_matrix, 'validation_plot' = ), remember = TRUE)
-  # return stagerunner(modelenv, functions) to test specified evaluation methods
+  # This list of functions will be incorporated into the full model stageRunner
+  list('(Internal) Generate evaluation options' = generate_options,
+       auc = auc,
+       'confusion matrix' = confusion_matrix,
+       'validation plot' = validation_plot)
 }
 
-# hack for now
-# tryCatch(run('~/dev/avant-models/models/dev/conditional_default1.0/conditional_default1.0.r', 'evaluation'),error = force); active_runner()$stages[[5]]$run(remember = FALSE)
+#' Plot a confusion matrix for a given prediction set, and return the table.
+#' 
+#' @param dataframe data.frame. Must contain \code{score} and \code{dep_var}
+#'    columns. The confusion matrix will be calculated for these values.
+#'    The mentioned columns must both be numeric.
+#' @param cutoff numeric. The cutoff at which to assign numbers greater a 1
+#'    for prediction purposes, and 0 otherwise. The default is 0.5.
+#' @param plot.it logical. Whether or not to plot the confusion matrix as a
+#'    four fold diagram. The default is \code{TRUE}.
+#' @param xlab character. The labels for the rows (\code{dep_var}). The default
+#'    is \code{c("dep_var = 0", "dep_var = 1")}.
+#' @param ylab character. The labels for the rows (\code{score}). The default
+#'    is \code{c("score = 0", "score = 1")}.
+#' @param title character. The title for the fourfoldplot, if it is graphed.
+#' @return a table. The confusion matrix table.
+confusion_matrix <- function(dataframe, cutoff = 0.5, plot.it = TRUE,
+                             xlab = c("dep_var = 0", "dep_var = 1"),
+                             ylab = c("score = 0", "score = 1"), title = NULL) {
+  stopifnot(is.data.frame(dataframe) &&
+            all(c('score', 'dep_var') %in% colnames(dataframe)))
+  stopifnot(is.numeric(dataframe$score) && is.numeric(dataframe$dep_var))
+
+  dataframe$score <- ifelse(dataframe$score <= cutoff, 0, 1)
+  categories <- dataframe$score * 2 + dataframe$dep_var
+  confusion <- matrix(tabulate(1 + categories, 4), nrow = 2)
+  colnames(confusion) <- ylab
+  rownames(confusion) <- xlab
+  if (plot.it) fourfoldplot(confusion, color = c("#CC6666", "#99CC99"),
+                            conf.level = 0, margin = 1, main = title)
+  confusion 
+}
+

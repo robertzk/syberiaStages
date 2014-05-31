@@ -3,7 +3,7 @@
 \alias{evaluation_stage}
 \title{Evaluation stage for syberia models.}
 \usage{
-evaluation_stage(modelenv, evaluation_parameters)
+evaluation_stage(evaluation_parameters)
 }
 \arguments{
 \item{modelenv}{an environment. The persistent modeling environment.}
@@ -13,9 +13,18 @@ evaluation_stage(modelenv, evaluation_parameters)
 
    \itemize{
      \item type. The first element must be a string "regression" or "classification".
+     \item output. The prefix of the CSV and PNG to which to output the results
+       of the validation. For example, if you put "output/foo", then "output/foo.csv"
+       will be a CSV file containing a data.frame with the columns "dep_var",
+       "loan_id", and "score", where the latter refers to predicted score. On the other
+       hand, "output/foo.png" will contain a decile validation plot of the results.
      \item percent. The percent of the data that was used for training. Currently,
        only sequential splits of training and validation are supported until
        syberia introduces a better mechanism for data partitions. The default is 0.8.
+     \item dep_var. (Optional) The name of the dependent variable in the evaluated data.
+       The default is "dep_var".
+     \item cutoff. (Optional) A cutoff for binary classification predictions: above the
+       cutoff means a prediction 1, and otherwise a 0. The default is 0.5.
     }}
 }
 \value{
