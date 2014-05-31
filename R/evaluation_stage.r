@@ -1,6 +1,6 @@
 #' Evaluation stage for syberia models.
 #'
-#' A helper stage for evaluating a binary classification or a regression 
+#' A helper stage for evaluating a binary classification
 #' model according to the metrics: AUC, a confusion matrix, and a validation plot.
 #'
 #' The evaluation stage parameters in the syberia model file are described in the
@@ -11,7 +11,6 @@
 #'    must be in the following format:
 #'
 #'    \itemize{
-#'      \item type. The first element must be a string "regression" or "classification".
 #'      \item output. The prefix of the CSV and PNG to which to output the results
 #'        of the validation. For example, if you put "output/foo", then "output/foo.csv"
 #'        will be a CSV file containing a data.frame with the columns "dep_var",
@@ -29,11 +28,6 @@
 #' @return a stageRunner that performs AUC, confusing matrix, and validation
 #'   plotting.
 evaluation_stage <- function(evaluation_parameters) {
-  # Only binary classification and continuous regression are supported
-  # evaluation types for now.
-  stopifnot((is.character(type <- evaluation_parameters[[1]]) ||
-             is.character(type <- evaluation_parameters$type)) &&
-            type %in% c("regression", "classification"))
   stopifnot('output' %in% names(evaluation_parameters))
 
   cutoff <- evaluation_parameters$cutoff %||% 0.5
