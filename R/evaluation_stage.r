@@ -1,25 +1,36 @@
-##' Evaluation stage for syberia models
+#' Evaluation stage for syberia models.
 #'
-#' TODO: Document this more
-#' 
+#' A helper stage for evaluating a binary classification or a regression 
+#' model according to the metrics: AUC, a confusion matrix, and a validation plot.
+#'
+#' The evaluation stage parameters in the syberia model file are described in the
+#' `evaluation_parameters` argument below.
+#'
 #' @param modelenv an environment. The persistent modeling environment.
-#' @param sub_models a list. Storing each sub_model trained during model_stage(e.g. GBM, RF, GLM, regression...)
-#' @param model_type specifies whether the sub_model is a classification or regression model
-#' @param evalutaion_fn, input for a list of evaluation methods
+#' @param evaluation_parameters list. These come from the syberia model and
+#'    must be in the following format:
+#'
+#'    \itemize{
+#'      \item type. The first element must be a string `"regression"` or "`classification"`.
+#'      \item percent. The percent of the data that was used for training. Currently,
+#'        only sequential splits of training and validation are supported until
+#'        syberia introduces a better mechanism for data partitions.
+#'     }
 #' @export
-#' 
-#
+#' @return a stageRunner that performs AUC, confusing matrix, and validation
+#'   plotting.
 evaluation_stage <- function(modelenv, evaluation_parameters) {
-  modelenv <- global_modeling_environment # if we make a copy of the active_runner()$context in global modeling envrionment, 
-  # then we can rapidly test evaluation stage using run('model.r', 'evaluation')
-  modelenv$data <- read.csv(global_modeling_environment$import_stage$file, stringsAsFactors = FALSE) # TODO: Will break if file adapter wasn't used for import
-  
-  # train_scores <- global_modeling_environment$model_stage$model$predict(global_modeling_environment$data, munge = FALSE)
-  
-  # for example, run('~/dev/avant-models/models/dev/collection1.1/collection1.1.r', 'evaluation')
-  # global_modeling_environment <- new.env(); stagerunner:::copy_env(global_modeling_environment, active_runner()$context)
-  # global_modeling_environment <- new.env(); stagerunner:::copy_env(global_modeling_environment, active_runner()$stages[[4]]$stages[[1]]$cached_env)
-  stopifnot(is.character(evaluation_parameters[[1]]) && evaluation_parameters[[1]] %in% c("regression", "classification"))
+  # TODO: (RK) Remove this to use the IO adapter once that has been written.
+  # In order to grab the data as what it looked like prior to any data preparation,
+  # we are going to extract it from the cached environment of the first step in the
+  # data stage. This way, it will be import-method-agnostic, and we will not
+  # have to worry whether our data came from CSV, S3, etc. We also assume the
+  # stageRunner we are attached to is in `active_runner()`.
+  raw_data <- stagerunner:::treeSkeleton(
+    active_runner()$stages$data)$first_leaf()$object$cached_env$data
+
+  stopifnot(is.character(evaluation_parameters[[1]]) &&
+            evaluation_parameters[[1]] %in% c("regression", "classification"))
   # if (!exists(evalutaion_fn <- pp('eval_models_#{evaluation_parameters[[1]]}')))
   #  stop("Missing evaluation container for keyword '", evaluation_parameters[[1]], "'")
   trainpct <- evaluation_parameters[[grep("percent", names(evaluation_parameters))]]
