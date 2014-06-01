@@ -37,12 +37,13 @@
 evaluation_stage <- function(evaluation_parameters) {
   stopifnot('output' %in% names(evaluation_parameters))
 
-  modelenv$evaluation_stage <- list(
-    cutoff = evaluation_parameters$cutoff %||% 0.5,
-    train_percent = evaluation_parameters$percent %||% 0.8,
-    dep_var = evaluation_parameters$dep_var %||% 'dep_var',
-    id_column = evaluation_parameters$id_column
-  )
+  modelenv$evaluation_stage <- with(evaluation_parameters, list(
+    output = output,
+    cutoff = cutoff %||% 0.5,
+    train_percent = percent %||% 0.8,
+    dep_var = dep_var %||% 'dep_var',
+    id_column = id_column
+  ))
 
   # This list of functions will be incorporated into the full model stageRunner
   list(
@@ -94,10 +95,8 @@ evaluation_stage_generate_options <- function(modelenv) {
     modelenv$evaluation_stage$prediction_data[[id_column]] <-
       validation_data[[id_column]]
 
-  if ('output' %in% names(evaluation_parameters)) {
-    write.csv(paste0(modelenv$evaluation_stage$prediction_data, '.csv'),
-              evaluation_parameters$output, row.names = FALSE)
-  }
+  write.csv(paste0(modelenv$evaluation_stage$prediction_data, '.csv'),
+            modelenv$evaluation_stage$output, row.names = FALSE)
 }
   
 #' Compute the AUC in conjunction with \code{evaluation_stage}.
