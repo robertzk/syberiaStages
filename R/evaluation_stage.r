@@ -37,20 +37,20 @@
 evaluation_stage <- function(evaluation_parameters) {
   stopifnot('output' %in% names(evaluation_parameters))
 
-  modelenv$evaluation_stage <- with(evaluation_parameters, list(
-    output = output,
-    cutoff = cutoff %||% 0.5,
-    train_percent = percent %||% 0.8,
-    dep_var = dep_var %||% 'dep_var',
-    id_column = id_column
-  ))
+  params <- list(
+    output = evaluation_parameters$output,
+    cutoff = evaluation_parameters$cutoff %||% 0.5,
+    train_percent = evaluation_parameters$percent %||% 0.8,
+    dep_var = evaluation_parameters$dep_var %||% 'dep_var',
+    id_column = evaluation_parameters$id_column
+  )
 
   # This list of functions will be incorporated into the full model stageRunner
   list(
-     '(Internal) Generate evaluation options' = evaluation_stage_generate_options,
+     '(Internal) Generate evaluation options' = evaluation_stage_generate_options(params),
      auc = evaluation_stage_auc,
      'confusion matrix' = evaluation_stage_confusion_matrix,
-     'validation plot' = evalution_stage_validation_plot
+     'validation plot' = evaluation_stage_validation_plot
   )
 }
 
@@ -67,36 +67,42 @@ evaluation_stage <- function(evaluation_parameters) {
 #' (see the \code{output} parameter in the \code{evaluation_stage} options,
 #' it is also performed in this helper function.
 #'
-#' @param modelenv environment. The current modeling environment.
-evaluation_stage_generate_options <- function(modelenv) {
-  # TODO: (RK) Remove this to use the IO adapter once that has been written.
-  # In order to grab the data as what it looked like prior to any data preparation,
-  # we are going to extract it from the cached environment of the first step in the
-  # data stage. This way, it will be import-method-agnostic, and we will not
-  # have to worry whether our data came from CSV, S3, etc. We also assume the
-  # stageRunner we are attached to is in `active_runner()`.
-  raw_data <- stagerunner:::treeSkeleton(
-    active_runner()$stages$data)$first_leaf()$object$cached_env$data
+#' @param params list. A list containing \code{output}, \code{cutoff},
+#'   \code{train_percent}, \code{dep_var}, and \code{id_column} as in
+#'   the evaluation_stage parameters.
+#' @return a function suitable for use in a stageRunner.
+evaluation_stage_generate_options <- function(params) {
+  function(modelenv) {
+    modelenv$evaluation_stage <- params
+    # TODO: (RK) Remove this to use the IO adapter once that has been written.
+    # In order to grab the data as what it looked like prior to any data preparation,
+    # we are going to extract it from the cached environment of the first step in the
+    # data stage. This way, it will be import-method-agnostic, and we will not
+    # have to worry whether our data came from CSV, S3, etc. We also assume the
+    # stageRunner we are attached to is in `active_runner()`.
+    raw_data <- stagerunner:::treeSkeleton(
+      active_runner()$stages$data)$first_leaf()$object$cached_env$data
 
-  validation_rows <-
-    seq(modelenv$evaluation_stage$train_percent * nrow(raw_data) + 1,
-        nrow(raw_data))
-  # The validation data is the last (1 - train_percent) of the dataframe.
-  validation_data <- raw_data[validation_rows, ]
-  score <- modelenv$model_stage$model$predict(validation_data)
-  # TODO: (RK) Replace this with data partitions after they've been 
-  # incorporated into syberia.
+    validation_rows <-
+      seq(modelenv$evaluation_stage$train_percent * nrow(raw_data) + 1,
+          nrow(raw_data))
+    # The validation data is the last (1 - train_percent) of the dataframe.
+    validation_data <- raw_data[validation_rows, ]
+    score <- modelenv$model_stage$model$predict(validation_data)
+    # TODO: (RK) Replace this with data partitions after they've been 
+    # incorporated into syberia.
 
-  modelenv$evaluation_stage$prediction_data <-
-    data.frame(dep_var = validation_data[[modelenv$evaluation_stage$dep_var]],
-               score = score)
+    modelenv$evaluation_stage$prediction_data <-
+      data.frame(dep_var = validation_data[[modelenv$evaluation_stage$dep_var]],
+                 score = score)
 
-  if (!is.null(id_column <- modelenv$evaluation_stage$id_column))
-    modelenv$evaluation_stage$prediction_data[[id_column]] <-
-      validation_data[[id_column]]
+    if (!is.null(id_column <- modelenv$evaluation_stage$id_column))
+      modelenv$evaluation_stage$prediction_data[[id_column]] <-
+        validation_data[[id_column]]
 
-  write.csv(paste0(modelenv$evaluation_stage$prediction_data, '.csv'),
-            modelenv$evaluation_stage$output, row.names = FALSE)
+    write.csv(paste0(modelenv$evaluation_stage$prediction_data, '.csv'),
+              modelenv$evaluation_stage$output, row.names = FALSE)
+  }
 }
   
 #' Compute the AUC in conjunction with \code{evaluation_stage}.
