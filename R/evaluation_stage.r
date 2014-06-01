@@ -48,9 +48,9 @@ evaluation_stage <- function(evaluation_parameters) {
   # This list of functions will be incorporated into the full model stageRunner
   list(
      '(Internal) Generate evaluation options' = evaluation_stage_generate_options(params),
-     auc = evaluation_stage_auc,
      'confusion matrix' = evaluation_stage_confusion_matrix,
-     'validation plot' = evaluation_stage_validation_plot
+     'validation plot' = evaluation_stage_validation_plot,
+     auc = evaluation_stage_auc
   )
 }
 
@@ -177,25 +177,23 @@ evaluation_stage_confusion_matrix <- function(modelenv) {
 #'
 #' @param modelenv environment. The current modeling environment.
 evaluation_stage_validation_plot <- function(modelenv){
-  with(modelenv$evaluation_stage$options$prediction, {
-    ordered_scores <- modelenv$evaluation_stage$prediction_data[
-      order(modelenv$evaluation_stage$prediction_data$score), ]
-    xs <- (10*(0:9) + 9) / 100 # TODO: (RK) Make a parameter for this
-    ys <- sapply(xs, function(x) {
-      xrows <- seq((nrow(ordered_scores) * max(x - (xs[2] - xs[1]), 0) + 1),
-                   (nrow(ordered_scores) * x))
-      sum(ordered_scores[xrows, 'dep_var']) / length(xrows)
-    }) # TODO: (RK) Figure out if this can be done more cleanly with tapply.
-    
-    png(filename = paste0(prediction, '.png'))
-    plot(xs, ys, type = 'l', col = 'darkgreen',
-         main = 'Dependent variable capture v.s. score deciles',
-         xlab = '% of samples ordered by model score',
-         ylab = '% of dependent variable = 1',
-         frame.plot = TRUE, lwd = 3, cex = 2)
-    dev.off()
-    NULL
-  })
+  ordered_scores <- modelenv$evaluation_stage$prediction_data[
+    order(modelenv$evaluation_stage$prediction_data$score), ]
+  xs <- (10*(0:9) + 9) / 100 # TODO: (RK) Make a parameter for this
+  ys <- sapply(xs, function(x) {
+    xrows <- seq((nrow(ordered_scores) * max(x - (xs[2] - xs[1]), 0) + 1),
+                 (nrow(ordered_scores) * x))
+    sum(ordered_scores[xrows, 'dep_var']) / length(xrows)
+  }) # TODO: (RK) Figure out if this can be done more cleanly with tapply.
+  
+  png(filename = paste0(modelenv$evaluation_stage$output, '.png'))
+  plot(xs, ys, type = 'l', col = 'darkgreen',
+       main = 'Dependent variable capture v.s. score deciles',
+       xlab = '% of samples ordered by model score',
+       ylab = '% of dependent variable = 1',
+       frame.plot = TRUE, lwd = 3, cex = 2)
+  dev.off()
+  NULL
 }
   
 
