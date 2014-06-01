@@ -100,8 +100,8 @@ evaluation_stage_generate_options <- function(params) {
       modelenv$evaluation_stage$prediction_data[[id_column]] <-
         validation_data[[id_column]]
 
-    write.csv(paste0(modelenv$evaluation_stage$prediction_data, '.csv'),
-              modelenv$evaluation_stage$output, row.names = FALSE)
+    write.csv(modelenv$evaluation_stage$prediction_data,
+              paste0(modelenv$evaluation_stage$output, '.csv'), row.names = FALSE)
   }
 }
   
