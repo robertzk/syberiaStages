@@ -3,10 +3,15 @@
 \alias{evaluation_stage_generate_options}
 \title{Store necessary information for evaluation stage.}
 \usage{
-evaluation_stage_generate_options(modelenv)
+evaluation_stage_generate_options(params)
 }
 \arguments{
-\item{modelenv}{environment. The current modeling environment.}
+\item{params}{list. A list containing \code{output}, \code{cutoff},
+\code{train_percent}, \code{dep_var}, and \code{id_column} as in
+the evaluation_stage parameters.}
+}
+\value{
+a function suitable for use in a stageRunner.
 }
 \description{
 The \code{evaluation_stage} function needs a data.frame containing
