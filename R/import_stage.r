@@ -17,7 +17,11 @@ import_stage <- function(import_options) {
 #'   IO adapters. (See the "adapter" reference class.)
 build_import_stagerunner <- function(import_options) {
   stages <- lapply(seq_along(import_options), function(index) {
-    stage <- function(modelenv) {
+    adapter <- names(import_options)[index] %||% default_adapter()
+    adapter <- fetch_adapter(adapter)
+    opts <- import_options[[index]]
+
+    function(modelenv) {
       # Only run if data isn't already loaded
       if (!'data' %in% ls(modelenv)) {
         attempt <- suppressWarnings(suppressMessages(
@@ -28,12 +32,6 @@ build_import_stagerunner <- function(import_options) {
         }
       }
     }
-
-    # Now attach the adapter and options to the above closure.
-    adapter <- names(import_options)[index] %||% default_adapter()
-    environment(stage)$adapter <- fetch_adapter(adapter)
-    environment(stage)$opts <- import_options[[index]]
-    stage
   })
   names(stages) <- vapply(stages, function(stage)
     paste0("Import from ", environment(stage)$adapter$.keyword), character(1))
