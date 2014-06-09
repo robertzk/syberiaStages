@@ -90,9 +90,9 @@ evaluation_stage_generate_options <- function(params) {
     raw_data <- stagerunner:::treeSkeleton(
       active_runner()$stages$data)$first_leaf()$object$cached_env$data
 
-    stopifnot('seed' %in% names(evaluation_parameters))
   
     if(modelenv$evaluation_stage$random_sample){
+      stopifnot('seed' %in% names(evaluation_parameters))
       set.seed(modelenv$evaluation_stage$seed) 
       training_rows <- createDataPartition(factor(raw_data[, modelenv$evaluation_stage$dep_var]), 
                                            p = modelenv$evaluation_stage$train_percent, list = FALSE, times = modelenv$evaluation_stage$times)[,1]  
