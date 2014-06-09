@@ -10,19 +10,6 @@ import_stage <- function(import_options) {
   build_import_stagerunner(import_options)
 }
 
-#' Fetch the default adapter keyword from the active syberia
-#' project's configuration file.
-#'
-#' @return a string representing the default adapter.
-default_adapter <- function() {
-  # TODO: (RK) Multi-syberia projects root tracking?
-
-  # Grab the default adapter if it is not provided from the Syberia
-  # project's configuration file. If no default is specified there,
-  # we will assume we're reading from a file.
-  default_adapter <- syberia_config()$default_adapter %||% 'file'
-}
-
 #' Build a stagerunner for importing data with backup sources.
 #'
 #' @param import_options list. Nested list, one adapter per list entry.
@@ -65,7 +52,32 @@ build_import_stagerunner <- function(import_options) {
   stages
 }
 
-#' Fetch an import adapter.
+
+#' Fetch the default adapter keyword from the active syberia
+#' project's configuration file.
+#'
+#' @return a string representing the default adapter.
+default_adapter <- function() {
+  # TODO: (RK) Multi-syberia projects root tracking?
+
+  # Grab the default adapter if it is not provided from the Syberia
+  # project's configuration file. If no default is specified there,
+  # we will assume we're reading from a file.
+  default_adapter <- syberia_config()$default_adapter %||% 'file'
+}
+
+#' Fetch a syberia IO adapters.
+#'
+#' IO adapters are (reference class) objects that have a \code{read}
+#' and \code{write}. By wrappings in an adapter, you do not have to
+#' worry about whether to use, e.g., \code{read.csv} versus \code{s3read}
+#' or \code{write.csv} versus \code{s3store}. If you are familiar with
+#' the tundra package, think of adapters as like tundra containers for
+#' importing and exporting data.
+#'
+#' For example, we can do: \code{fetch_adapter('file')$write(iris, '/tmp/iris.csv')}
+#' and the contents of the built-in \code{iris} data set will be stored
+#' in the file \code{"/tmp/iris.csv"}.
 #'
 #' @param keyword character. The keyword for the adapter (e.g., 'file', 's3', etc.)
 #' @return an \code{adapter} object (defined in this package, syberiaStages)
