@@ -42,8 +42,7 @@ evaluation_stage <- function(evaluation_parameters) {
     cutoff = evaluation_parameters$cutoff %||% 0.5,
     train_percent = evaluation_parameters$percent %||% 0.8,
     dep_var = evaluation_parameters$dep_var %||% 'dep_var',
-    id_column = evaluation_parameters$id_column,
-    make_plot = evaluation_parameters$make_plot
+    id_column = evaluation_parameters$id_column
   )
 
   # This list of functions will be incorporated into the full model stageRunner
@@ -150,7 +149,7 @@ evaluation_stage_confusion_matrix <- function(modelenv) {
   confusion_matrix_arguments <- 
     list(modelenv$evaluation_stage$prediction_data,
          modelenv$evaluation_stage$cutoff,
-         plot.it = modelenv$evaluation_stage$make_plot, xlab = c("dep_var = 0", "dep_var = 1"),
+         plot.it = TRUE, xlab = c("dep_var = 0", "dep_var = 1"),
          ylab = c("score = 0", "score = 1"), title = NULL)
   modelenv$evaluation_stage$confusion_matrix <-
     do.call(confusion_matrix, confusion_matrix_arguments)
