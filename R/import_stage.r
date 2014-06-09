@@ -4,26 +4,31 @@
 #'    depending on the adapter. (default is file adapter)
 #' @export
 import_stage <- function(import_options) {
-  if (!is.list(import_options)) {
-    # TODO: (RK) Multi-syberia projects root tracking?
-
-    # Grab the default adapter if it is not provided from the Syberia
-    # project's configuration file. If no default is specified there,
-    # we will assume we're reading from a file.
-    default_adapter <- syberia_config()$default_adapter %||% 'file'
-    import_options <- setNames(list(resource = import_options), default_adapter)
-  }
+  if (!is.list(import_options)) # Coerce to a list using the default adapter
+    import_options <- setNames(list(resource = import_options), default_adapter())
 
   build_import_stagerunner(import_options)
+}
+
+
+#' Fetch the default adapter keyword from the active syberia
+#' project's configuration file.
+#'
+#' @return a string representing the default adapter.
+default_adapter <- function() {
+  # TODO: (RK) Multi-syberia projects root tracking?
+
+  # Grab the default adapter if it is not provided from the Syberia
+  # project's configuration file. If no default is specified there,
+  # we will assume we're reading from a file.
+  default_adapter <- syberia_config()$default_adapter %||% 'file'
 }
 
 #' Build a stagerunner for importing data with backup sources.
 #'
 #' @param import_options list. Nested list, one adapter per list entry.
-#' @param meta_options list. Any additional special arguments. Currently,
-#'    only \code{skip} is a supported value. If this key is in the list,
-#'    then its value will be used to try to load the data from a global
-#'    variable with that name.
+#'   These adapter parametrizations will get converted to legitimate
+#'   IO adapters. (See the "adapter" reference class.)
 build_import_stagerunner <- function(import_options) {
   stages <- lapply(seq_along(import_options), function(index) {
     stage <- function(modelenv) {
@@ -33,7 +38,8 @@ build_import_stagerunner <- function(import_options) {
           tryCatch(adapter$read(opts), error = function(e) FALSE)))
       }
     }
-    opts <- normalize_import_options(import_options[[index]])[[1]]
+    
+    # Now attach the adapter and options to the above closure.
     adapter <- names(import_options)[index] %||% opts$adapter
     environment(stage)$fn <- import_adapter(adapter)
     environment(stage)$opts <- opts
