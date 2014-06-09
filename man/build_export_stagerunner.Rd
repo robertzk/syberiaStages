@@ -3,10 +3,12 @@
 \alias{build_export_stagerunner}
 \title{Build a stagerunner for exporting data with backup sources.}
 \usage{
-build_export_stagerunner(export_options, meta_options = list())
+build_export_stagerunner(export_options)
 }
 \arguments{
-\item{export}{a list. Nested list, one adapter per list entry.}
+\item{export_options}{list. Nested list, one adapter per list entry.
+These adapter parametrizations will get converted to legitimate
+IO adapters. (See the "adapter" reference class.)}
 }
 \description{
 Build a stagerunner for exporting data with backup sources.
