@@ -69,7 +69,7 @@ default_adapter <- function() {
 #' Fetch a syberia IO adapters.
 #'
 #' IO adapters are (reference class) objects that have a \code{read}
-#' and \code{write}. By wrappings in an adapter, you do not have to
+#' and \code{write} method. By wrapping things in an adapter, you do not have to
 #' worry about whether to use, e.g., \code{read.csv} versus \code{s3read}
 #' or \code{write.csv} versus \code{s3store}. If you are familiar with
 #' the tundra package, think of adapters as like tundra containers for
