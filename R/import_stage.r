@@ -1,32 +1,20 @@
 #' Import data stage for Syberia model process.
 #'
-#' @param import_options a list. The available import options. Will differ
+#' @param import_options list. The available import options. Will differ
 #'    depending on the adapter. (default is file adapter)
 #' @export
 import_stage <- function(import_options) {
-  reserved_words <- c('skip')
+  if (!is.list(import_options)) {
+    # TODO: (RK) Multi-syberia projects root tracking?
 
-  meta_options <- import_options[reserved_words]
-  if (!is.null(tmpnames <- names(import_options)))
-    import_options <- import_options[setdiff(tmpnames, reserved_words)]
-  
-  build_import_stagerunner(normalize_import_options(import_options), meta_options)
-}
-
-#' Normalize import options by converting a single option into a
-#' list of one if necessary.
-#'
-#' @param import_options list. A list of import sources.
-#' @return a normalized list of import options
-normalize_import_options <- function(import_options) {
-  # By default, try loading from only one adapter
-  if (!all(vapply(import_options, is.list, logical(1)))) {
-    if (is.character(import_options)) import_options <- list(file = import_options)
-    import_options$adapter <- import_options$adapter %||% 'file'
-    import_options <-
-      structure(list(import_options), .Names = import_options$adapter)
+    # Grab the default adapter if it is not provided from the Syberia
+    # project's configuration file. If no default is specified there,
+    # we will assume we're reading from a file.
+    default_adapter <- syberia_config()$default_adapter %||% 'file'
+    import_options <- setNames(list(resource = import_options), default_adapter)
   }
-  import_options
+
+  build_import_stagerunner(import_options)
 }
 
 #' Build a stagerunner for importing data with backup sources.
@@ -36,13 +24,13 @@ normalize_import_options <- function(import_options) {
 #'    only \code{skip} is a supported value. If this key is in the list,
 #'    then its value will be used to try to load the data from a global
 #'    variable with that name.
-build_import_stagerunner <- function(import_options, meta_options = list()) {
+build_import_stagerunner <- function(import_options) {
   stages <- lapply(seq_along(import_options), function(index) {
     stage <- function(modelenv) {
       # Only run if data isn't already loaded
       if (!'data' %in% ls(modelenv)) {
         attempt <- suppressWarnings(suppressMessages(
-          tryCatch(fn(modelenv, opts), error = function(e) FALSE)))
+          tryCatch(adapter$read(opts), error = function(e) FALSE)))
       }
     }
     opts <- normalize_import_options(import_options[[index]])[[1]]
