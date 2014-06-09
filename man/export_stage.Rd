@@ -6,7 +6,7 @@
 export_stage(export_options)
 }
 \arguments{
-\item{export}{list. The available export options. Will differ
+\item{export_options}{list. The available export options. Will differ
 depending on the adapter. (default is file adapter)}
 }
 \description{

@@ -102,6 +102,9 @@ parse_custom_adapter <- function(provided_env, type) {
 #' A helper function for formatting parameters for adapters to
 #' correctly include an argument "file", with aliases
 #' "resource", "filename", "name", and "path".
+#'
+#' @param opts list. The options that will get passed to the adapter
+#'   constructor function.
 #' @return the fixed and sanitized formatted options.
 common_file_formatter <- function(opts) {
   if (!is.element('resource', names(opts))) {

@@ -7,6 +7,10 @@ correctly include an argument "file", with aliases
 \usage{
 common_file_formatter(opts)
 }
+\arguments{
+\item{opts}{list. The options that will get passed to the adapter
+constructor function.}
+}
 \value{
 the fixed and sanitized formatted options.
 }
