@@ -1,6 +1,6 @@
 #' Export data stage for Syberia model process.
 #'
-#' @param export list. The available export options. Will differ
+#' @param export_options list. The available export options. Will differ
 #'    depending on the adapter. (default is file adapter)
 #' @export
 export_stage <- function(export_options) {
