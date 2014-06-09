@@ -31,7 +31,6 @@ fetch_adapter <- function(keyword) {
   keyword <- tolower(keyword)
   if (!is.element(keyword, names(adapters))) {
     if (is.null(adapters)) adapters <- list()
-    # TODO: (RK) Compile just-in-time adapters
     new_adapter <-
       if (is.element(keyword, names(built_in_adapters)))
         built_in_adapters[[keyword]]()
