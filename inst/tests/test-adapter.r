@@ -15,7 +15,7 @@ test_that('it can read using a simple example adapter correctly', {
 test_that('it can write using a simple example adapter correctly', {
   tmp <- new.env()
   read_function <- function(opts) tmp[[opts$resource]]
-  write_function <- function(opts) tmp$x <- opts$resource
+  write_function <- function(val, opts) tmp$x <- val
   a <- adapter(read_function, write_function)
   a$write("test")
   expect_identical(tmp$x, "test")
