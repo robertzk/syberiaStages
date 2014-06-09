@@ -67,18 +67,24 @@ model_stage <- function(model_parameters) {
 #' @export
 fetch_model_container <- function(type) {
   # TODO: (RK) Should we be using syberia_objects for this?
-  prefilename <- file.path(syberia_root(), 'lib', 'classifiers', type)
-  if (!(file.exists(filename <- pp('#{prefilename}.r')) ||
-        file.exists(filename <- pp('#{prefilename}.R')))) {
+  base <- file.path(syberia_root(), 'lib', 'classifiers')
+  potential_object <-
+    syberiaStructure:::syberia_objects(type, base = base, fixed = TRUE)
+  if (length(potential_object) == 0) {
     if (exists(model_fn <- pp('tundra_#{type}'))) return(get(model_fn))
     stop("Missing tundra container for keyword '", type, "'. ",
          "It must exist in the tundra package or be present in ",
          pp("lib/classifiers/#{type}.R"), call. = FALSE)
+  } else if (length(potential_object) > 1) {
+    stop("Found multiple classifiers with keyword ", sQuote(type), ", namely: ",
+         paste0(potential_objects, collapse = ', '), call. = FALSE)
+  } else {
+    filename <- file.path(base, potential_object)
   }
   
   provided_env <- new.env()
   syberiaStructure:::syberia_resource_with_modification_tracking(
-    filename, provides = provided_env)
+    filename, root = syberia_root(filename), provides = provided_env)$value()
   provided_functions <- parse_custom_classifier(provided_env, type)
 
   function(munge_procedure = list(), default_args = list(), internal = list()) {
