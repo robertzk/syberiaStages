@@ -77,7 +77,8 @@ fetch_model_container <- function(type) {
   }
   
   provided_env <- new.env()
-  source(filename, local = provided_env)
+  syberiaStructure:::syberia_resource_with_modification_tracking(
+    filename, provides = provided_env)
   provided_functions <- parse_custom_classifier(provided_env, type)
 
   function(munge_procedure = list(), default_args = list(), internal = list()) {
