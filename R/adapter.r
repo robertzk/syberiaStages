@@ -44,7 +44,7 @@ fetch_adapter <- function(keyword) {
   adapters[[keyword]]
 }
 
-#' Fetch a customer syberia IO adapter.
+#' Fetch a custom syberia IO adapter.
 #'
 #' Custom adapters are defined in \code{lib/adapters} from the root
 #' of the syberia project. Placing a file there with, for example, name 'foo.R',
