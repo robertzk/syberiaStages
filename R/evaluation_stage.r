@@ -83,9 +83,14 @@ evaluation_stage_generate_options <- function(params) {
     raw_data <- stagerunner:::treeSkeleton(
       active_runner()$stages$data)$first_leaf()$object$cached_env$data
 
-    validation_rows <-
-      seq(modelenv$evaluation_stage$train_percent * nrow(raw_data) + 1,
-          nrow(raw_data))
+    if(modelenv$evaluation_stage$random_sample){
+      set.seed(modelenv$evaluation_stage$seed) 
+      training_rows <- createDataPartition(factor(raw_data[, modelenv$evaluation_stage$dep_var]), 
+                                           p = modelenv$evaluation_stage$train_percent, list = FALSE, times = modelenv$evaluation_stage$times)[,1]  
+      
+      validation_rows <- setdiff(seq(1, nrow(raw_data)), training_rows)
+    } else validation_rows <- seq(round(modelenv$evaluation_stage$train_percent * nrow(raw_data) + 1), nrow(raw_data))
+    
     # The validation data is the last (1 - train_percent) of the dataframe.
     validation_data <- raw_data[validation_rows, ]
     score <- modelenv$model_stage$model$predict(validation_data)
