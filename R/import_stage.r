@@ -60,6 +60,8 @@ build_import_stagerunner <- function(import_options, meta_options = list()) {
   stages[[length(stages) + 1]] <- function(modelenv) {
     if (!'data' %in% ls(modelenv))
       stop("Failed to load data from all data sources")
+    
+    # TODO: (RK) Move this somewhere else.
     modelenv$import_stage$variable_summaries <-
       statsUtils::variable_summaries(modelenv$data) 
   }
