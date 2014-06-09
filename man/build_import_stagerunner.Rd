@@ -6,12 +6,9 @@
 build_import_stagerunner(import_options)
 }
 \arguments{
-\item{import_options}{list. Nested list, one adapter per list entry.}
-
-\item{meta_options}{list. Any additional special arguments. Currently,
-only \code{skip} is a supported value. If this key is in the list,
-then its value will be used to try to load the data from a global
-variable with that name.}
+\item{import_options}{list. Nested list, one adapter per list entry.
+These adapter parametrizations will get converted to legitimate
+IO adapters. (See the "adapter" reference class.)}
 }
 \description{
 Build a stagerunner for importing data with backup sources.
