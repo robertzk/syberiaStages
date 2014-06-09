@@ -107,3 +107,37 @@ import_adapter <- function(adapter = 'file') {
   }
 }
 
+# A reference class to abstract importing and exporting data.
+adapter <- setRefClass('adapter',
+  list(.read_function = 'function', .write_function = 'function',
+       .format_options = 'function', .default_options = 'list'),
+  methods = list(
+    initialize = function(read_function, write_function,
+                          format_options = identity, default_options = list()) { 
+      .read_function <<- read_function
+      .write_function <<- write_function
+      .format_options <<- format_options
+      .default_options <<- default_options
+    },
+
+    read = function(options = list()) {
+      .read_function(format_options(options))
+    },
+
+    write = function(options = list()) {
+      .write_function(format_options(options))
+    }
+
+    format_options = function(options) {
+      if (!is.list(options)) options <- list(resource = options)
+
+      # Merge in default options if they have not been set.
+      for (i in seq_along(.default_options))
+        if (!is.element((name <- names(.default_options)[i]) %in% names(options)))
+          options[[name]] <- .default_options[[i]]
+
+      .format_options(options)
+    }
+  )
+)
+
