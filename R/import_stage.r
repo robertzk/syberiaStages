@@ -133,7 +133,7 @@ adapter <- setRefClass('adapter',
 
       # Merge in default options if they have not been set.
       for (i in seq_along(.default_options))
-        if (!is.element((name <- names(.default_options)[i]) %in% names(options)))
+        if (!is.element(name <- names(.default_options)[i], names(options)))
           options[[name]] <- .default_options[[i]]
 
       .format_options(options)
