@@ -45,10 +45,59 @@ fetch_adapter <- function(keyword) {
   adapters[[keyword]]
 }
 
-fetch_customer_adapter <- function() {
-      stop("There is no adapter ", sQuote(keyword), " for reading and ",
-           "writing data. The available adapters are: ",
-          paste0(names(built_in_adapters), collapse = ', '), call. = FALSE)
+#' Fetch a customer syberia IO adapter.
+#'
+#' Custom adapters are defined in \code{lib/adapters} from the root
+#' of the syberia project. Placing a file there with, for example, name 'foo.R',
+#' will cause \code{fetch_custom_adapter('foo')} to return an appropriate
+#' IO adapter. The file 'foo.R' must contain a 'read', 'write', and (optionally)
+#' 'format' function, which will be used to construct the adapter. (See
+#' the definition of the adapter reference class.)
+#'
+#' @param keyword character. The keyword for the adapter (e.g., 'file', 's3', etc.)
+#' @return an \code{adapter} object (defined in this package, syberiaStages)
+fetch_custom_adapter <- function(keyword) {
+  # TODO: (RK) Better multi-project support
+  adapters_path <- file.path(syberia_root(), 'lib', 'adapters')
+  valid_adapters <- vapply(syberia_objects('', adapters_path), function(x)
+    tolower(gsub("\\.[rR]$", "", x)), character(1))
+
+  if (!is.element(keyword, valid_adapters))
+    stop("There is no adapter ", sQuote(keyword), " for reading and ",
+         "writing data. The available adapters are: ",
+         paste0(c(names(built_in_adapters), valid_adapters), collapse = ', '),
+         call. = FALSE)
+
+  provided_env <- new.env()
+  adapter_index <- which(valid_adapters == keyword)[1]
+  adapter_file <- names(valid_adapters)[adapter_index]
+  filename <- file.path(adapters_path, adapter_file)
+  syberiaStructure:::syberia_resource_with_modification_tracking(
+    filename, root = syberia_root(filename), provides = provided_env)$value()
+  parse_custom_adapter(provided_env, valid_adapters[adapter_index])
+}
+
+#' Ensures a custom adapter resource is valid and returns the corresponding
+#' adapter reference class object.
+#'
+#' There can only be one function defined that contains the string "read".
+#' Similarly there can only be one such function containing "write".
+#' If this condition is not met, this function will throw an error.
+#' Finally, there is also an optional "format" function that can be defined.
+#'
+#' @param provided_env environment. The environment the adapter was loaded from.
+#' @param type character. The keyword for the adapter.
+#' @return the \code{adapter} reference class object constructed from the parsed
+#'    adapter resource.
+parse_custom_adapter <- function(provided_env, type) {
+  args <- parse_custom_functions(c('read', 'write'), provided_env, type, 'adapter')
+  names(args) <- c('read_function', 'write_function')
+  format_fn <- parse_custom_functions(c('format'), provided_env,
+                                      type, 'adapter', strict = FALSE)
+  if (!is.null(format_fn$format)) args$format_function <- format_fn$format
+
+  # TODO: (RK) Read defaults for adapter from syberia project config file.
+  do.call(adapter$new, args)
 }
 
 #' A helper function for formatting parameters for adapters to

@@ -104,19 +104,6 @@ fetch_model_container <- function(type) {
 #' @return a list containing keys "train" and "predict" indicating the train
 #'    and predict functions.
 parse_custom_classifier <- function(provided_env, type) {
-  provided_fns <- list(train = NULL, predict = NULL)
-  for (function_type in names(provided_fns)) {
-    fn <- Filter(
-      function(x) is.function(provided_env[[x]]),
-      grep(function_type, ls(provided_env), value = TRUE)
-    )
-    error <- function(snip = 'a') paste0("The custom classifier in lib/classifiers/", type,
-      ".R should define ", snip, " '", testthat::colourise(function_type, 'green'), "' function.")
-    if (length(fn) == 0) stop(error(), call. = FALSE)
-    else if (length(fn) > 1)
-      stop(error('only one'), " Instead, you defined ", length(fn), ", namely: ",
-           paste0(fn, collapse = ', '), call. = FALSE)
-    provided_fns[[function_type]] <- provided_env[[fn]]
-  }
-  provided_fns
+  parse_custom_functions(c('train', 'predict'), provided_env, type, 'classifier')
 }
+

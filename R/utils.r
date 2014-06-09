@@ -26,3 +26,34 @@ list_merge <- function(list1, list2) {
   list1
 }
 
+#' Parse functions out of a custom resource.
+#'
+#' @param functions character. The names of functions to parse out.
+#' @param provided_env environment. The environment the resource was loaded from.
+#' @param type character. The keyword for the resource.
+#' @param resource_type character. The type of the resource (e.g., "classifier",
+#'   "adapter", etc.). This will be used to generate error messages.
+#' @param strict logical. Whether or not to error if the functions are not found.
+#' @return a list containing keys same as the \code{functions} argument.
+#'    and predict functions.
+parse_custom_functions <- function(functions, provided_env, type,
+                                   resource_type = 'classifier', strict = TRUE) {
+  provided_fns <- setNames(vector('list', length(functions)), functions)
+  for (function_type in names(provided_fns)) {
+    fn <- Filter(
+      function(x) is.function(provided_env[[x]]),
+      grep(function_type, ls(provided_env), value = TRUE)
+    )
+    error <- function(snip = 'a') paste0("The custom ", resource_type, " in ",
+      "lib/", resource_type, "s/", type, ".R should define ", snip, " '",
+      testthat::colourise(function_type, 'green'), "' function.")
+    if (length(fn) == 0 && identical(strict, TRUE)) stop(error(), call. = FALSE)
+    else if (length(fn) > 1)
+      stop(error('only one'), " Instead, you defined ", length(fn), ", namely: ",
+           paste0(fn, collapse = ', '), call. = FALSE)
+    else if (length(fn) == 1)
+      provided_fns[[function_type]] <- provided_env[[fn]]
+  }
+  provided_fns
+}
+
