@@ -30,6 +30,10 @@
 #'        output CSV. If not given, no ID column will be included.
 #'      \item cutoff. (Optional) A cutoff for binary classification predictions: above the
 #'        cutoff means a prediction 1, and otherwise a 0. The default is 0.5.
+#'      \item random_sample (Optional) An indicator for specifying whether the one has used 
+#'      random sample to setup validation data.
+#'      \item seed (Optional) the seed used to generate the random validation set.
+#'      \item times (Optional) number of times one wants to draw random sample, right now only supports 1.
 #'     }
 #' @export
 #' @return a stageRunner that performs AUC, confusing matrix, and validation
@@ -42,7 +46,10 @@ evaluation_stage <- function(evaluation_parameters) {
     cutoff = evaluation_parameters$cutoff %||% 0.5,
     train_percent = evaluation_parameters$percent %||% 0.8,
     dep_var = evaluation_parameters$dep_var %||% 'dep_var',
-    id_column = evaluation_parameters$id_column
+    id_column = evaluation_parameters$id_column,
+    random_sample = evaluation_parameters$random_sample %||% FALSE,
+    seed =  evaluation_parameters$seed, 
+    times =  evaluation_parameters$times %||% 1
   )
 
   # This list of functions will be incorporated into the full model stageRunner
@@ -83,13 +90,15 @@ evaluation_stage_generate_options <- function(params) {
     raw_data <- stagerunner:::treeSkeleton(
       active_runner()$stages$data)$first_leaf()$object$cached_env$data
 
+    stopifnot('seed' %in% names(evaluation_parameters))
+  
     if(modelenv$evaluation_stage$random_sample){
       set.seed(modelenv$evaluation_stage$seed) 
       training_rows <- createDataPartition(factor(raw_data[, modelenv$evaluation_stage$dep_var]), 
                                            p = modelenv$evaluation_stage$train_percent, list = FALSE, times = modelenv$evaluation_stage$times)[,1]  
       
       validation_rows <- setdiff(seq(1, nrow(raw_data)), training_rows)
-    } else validation_rows <- seq(round(modelenv$evaluation_stage$train_percent * nrow(raw_data) + 1), nrow(raw_data))
+    } else validation_rows <- seq(modelenv$evaluation_stage$train_percent * nrow(raw_data) + 1, nrow(raw_data))
     
     # The validation data is the last (1 - train_percent) of the dataframe.
     validation_data <- raw_data[validation_rows, ]
