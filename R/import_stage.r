@@ -38,19 +38,17 @@ build_import_stagerunner <- function(import_options) {
           tryCatch(adapter$read(opts), error = function(e) FALSE)))
       }
     }
-    
+
     # Now attach the adapter and options to the above closure.
-    adapter <- names(import_options)[index] %||% opts$adapter
-    environment(stage)$fn <- import_adapter(adapter)
-    environment(stage)$opts <- opts
-    environment(stage)$adapter <- adapter
+    adapter <- names(import_options)[index] %||% default_adapter()
+    environment(stage)$adapter <- fetch_adapter(adapter)
+    environment(stage)$opts <- import_options[[index]]
     stage
   })
-  names(stages) <-
-    vapply(stages, function(stage)
-                     paste0("Import from ", environment(stage)$adapter),
-           character(1))
+  names(stages) <- vapply(stages, function(stage)
+    paste0("Import from ", environment(stage)$adapter), character(1))
 
+  # Always verify the data was loaded correctly in a separate stageRunner step.
   stages[[length(stages) + 1]] <- function(modelenv) {
     if (!'data' %in% ls(modelenv))
       stop("Failed to load data from all data sources")
@@ -60,15 +58,6 @@ build_import_stagerunner <- function(import_options) {
       statsUtils::variable_summaries(modelenv$data) 
   }
   names(stages)[length(stages)] <- "(Internal) Verify data was loaded" 
-
-  if ('skip' %in% names(meta_options)) {
-    stages <- append(list("(Internal) Import model from a global variable" = function(modelenv) {
-      stopifnot(is.character(meta_options$skip))
-      if (!exists(meta_options$skip, envir = globalenv(), inherits = FALSE)) return()
-      modelenv$data <- get(meta_options$skip, envir = globalenv())
-      #copy is assigned to the global environment which is a local copy of the trained model
-    }), stages)
-  }
 
   stages
 }
