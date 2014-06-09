@@ -32,21 +32,23 @@ fetch_adapter <- function(keyword) {
   if (!is.element(keyword, names(adapters))) {
     if (is.null(adapters)) adapters <- list()
     # TODO: (RK) Compile just-in-time adapters
-    built_in_adapters <- list(file = construct_file_adapter,
-                              s3 = construct_s3_adapter,
-                              r = construct_R_adapter)
-    if (!is.element(keyword, names(built_in_adapters))) {
-      stop("There is no adapter ", sQuote(keyword), " for reading and ",
-           "writing data. The available adapters are: ",
-          paste0(names(built_in_adapters), collapse = ', '), call. = FALSE)
-    }
-    adapters[[keyword]] <- built_in_adapters[[keyword]]()
+    new_adapter <-
+      if (is.element(keyword, names(built_in_adapters)))
+        built_in_adapters[[keyword]]()
+      else fetch_custom_adapter(keyword)
+    adapters[[keyword]] <- new_adapter
     syberiaStructure:::set_cache(adapters, 'adapters')
   }
 
   # TODO: (RK) Should we re-compile the adapter if the syberia config
   # changed, or force the user to restart R/syberia?
   adapters[[keyword]]
+}
+
+fetch_customer_adapter <- function() {
+      stop("There is no adapter ", sQuote(keyword), " for reading and ",
+           "writing data. The available adapters are: ",
+          paste0(names(built_in_adapters), collapse = ', '), call. = FALSE)
 }
 
 #' A helper function for formatting parameters for adapters to
@@ -210,4 +212,7 @@ adapter <- setRefClass('adapter',
   )
 )
 
+built_in_adapters <- list(file = construct_file_adapter,
+                          s3 = construct_s3_adapter,
+                          r = construct_R_adapter)
 
