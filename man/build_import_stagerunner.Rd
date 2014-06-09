@@ -3,7 +3,7 @@
 \alias{build_import_stagerunner}
 \title{Build a stagerunner for importing data with backup sources.}
 \usage{
-build_import_stagerunner(import_options, meta_options = list())
+build_import_stagerunner(import_options)
 }
 \arguments{
 \item{import_options}{list. Nested list, one adapter per list entry.}
