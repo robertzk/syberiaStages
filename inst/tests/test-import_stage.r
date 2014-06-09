@@ -1,18 +1,3 @@
-context('fetch_adapter')
-
-test_that('it fetches the s3 adapter', {
-  expect_identical(fetch_adapter('s3')$.keyword, 's3')
-})
-
-test_that('it fetches the default adapter', {
-  expect_identical(fetch_adapter('file')$.keyword, 'file')
-})
-
-
-test_that('it fetches the R adapter', {
-  expect_identical(fetch_adapter('R')$.keyword, 'R')
-})
-
 context('build_import_stagerunner')
 
 test_that('it returns a stageRunner', {
