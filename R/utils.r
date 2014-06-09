@@ -44,6 +44,7 @@ parse_custom_functions <- function(functions, provided_env, type,
       function(x) is.function(provided_env[[x]]),
       grep(function_type, ls(provided_env), value = TRUE)
     )
+    # TODO: (RK) Refactor this to be more careful about idempotent resources.
     error <- function(snip = 'a') paste0("The custom ", resource_type, " in ",
       "lib/", resource_type, "s/", type, ".R should define ", snip, " '",
       testthat::colourise(function_type, 'green'), "' function.")
