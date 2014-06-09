@@ -126,7 +126,7 @@ adapter <- setRefClass('adapter',
 
     write = function(options = list()) {
       .write_function(format_options(options))
-    }
+    },
 
     format_options = function(options) {
       if (!is.list(options)) options <- list(resource = options)
