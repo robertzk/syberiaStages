@@ -11,7 +11,7 @@ default_adapter <- function() {
   default_adapter <- syberia_config()$default_adapter %||% 'file'
 }
 
-#' Fetch a syberia IO adapters.
+#' Fetch a syberia IO adapter.
 #'
 #' IO adapters are (reference class) objects that have a \code{read}
 #' and \code{write} method. By wrapping things in an adapter, you do not have to
