@@ -10,7 +10,6 @@ import_stage <- function(import_options) {
   build_import_stagerunner(import_options)
 }
 
-
 #' Fetch the default adapter keyword from the active syberia
 #' project's configuration file.
 #'
@@ -36,6 +35,10 @@ build_import_stagerunner <- function(import_options) {
       if (!'data' %in% ls(modelenv)) {
         attempt <- suppressWarnings(suppressMessages(
           tryCatch(adapter$read(opts), error = function(e) FALSE)))
+        if (!identical(attempt, FALSE)) {
+          modelenv$import_stage$adapter <- adapter
+          modelenv$data <- attempt
+        }
       }
     }
 
@@ -46,7 +49,7 @@ build_import_stagerunner <- function(import_options) {
     stage
   })
   names(stages) <- vapply(stages, function(stage)
-    paste0("Import from ", environment(stage)$adapter), character(1))
+    paste0("Import from ", environment(stage)$adapter$.keyword), character(1))
 
   # Always verify the data was loaded correctly in a separate stageRunner step.
   stages[[length(stages) + 1]] <- function(modelenv) {
@@ -68,12 +71,25 @@ build_import_stagerunner <- function(import_options) {
 #' @return an \code{adapter} object (defined in this package, syberiaStages)
 fetch_adapter <- function(keyword) {
   adapters <- syberiaStructure:::get_cache('adapters')
+  keyword <- tolower(keyword)
   if (!is.element(keyword, names(adapters))) {
-  } else {
-    # TODO: (RK) Should we re-compile the adapter if the syberia config
-    # changed, or force the user to restart R/syberia?
-    adapters[[keyword]]
+    if (is.null(adapters)) adapters <- list()
+    # TODO: (RK) Compile just-in-time adapters
+    built_in_adapters <- list(file = construct_file_adapter,
+                              s3 = construct_s3_adapter,
+                              r = construct_R_adapter)
+    if (!is.element(keyword, names(built_in_adapters))) {
+      stop("There is no adapter ", sQuote(keyword), " for reading and ",
+           "writing data. The available adapters are: ",
+          paste0(names(built_in_adapters), collapse = ', '), call. = FALSE)
+    }
+    adapters[[keyword]] <- built_in_adapters[[keyword]]()
+    syberiaStructure:::set_cache(adapters, 'adapters')
   }
+
+  # TODO: (RK) Should we re-compile the adapter if the syberia config
+  # changed, or force the user to restart R/syberia?
+  adapters[[keyword]]
 }
 
 #' A helper function for formatting parameters for adapters to
@@ -163,33 +179,51 @@ construct_s3_adapter <- function() {
 
   # TODO: (RK) Read default_options in from config, so a user can
   # specify default options for various adapters.
-  adapter(read_function, write_function, formatter, list(), keyword = 's3')
+  adapter(read_function, write_function, format_function = common_file_formatter,
+          default_options = list(), keyword = 's3')
+}
+
+#' Construct an adapter for reading to and from an R environment,
+#' by default the global environment.
+#'
+#' @return an \code{adapter} object which reads and writes to Amazon's S3.
+construct_R_adapter <- function() {
+  read_function <- function(opts) {
+    get(opts$resource, envir = opts$env) # TODO: (RK) Support "inherits"?
+  }
+
+  write_function <- function(object, opts) {
+    assign(opts$resource, object, envir = opts$env)
+  }
+
+  adapter(read_function, write_function, format_function = common_file_formatter,
+          default_options = list(env = globalenv()), keyword = 'R')
 }
 
 # A reference class to abstract importing and exporting data.
 adapter <- setRefClass('adapter',
   list(.read_function = 'function', .write_function = 'function',
-       .format_options = 'function', .default_options = 'list', .keyword = 'character'),
+       .format_function = 'function', .default_options = 'list', .keyword = 'character'),
   methods = list(
     initialize = function(read_function, write_function,
-                          format_options = identity, default_options = list(),
+                          format_function = identity, default_options = list(),
                           keyword = character(0)) { 
       .read_function <<- read_function
       .write_function <<- write_function
-      .format_options <<- format_options
+      .format_function <<- format_function
       .default_options <<- default_options
       .keyword <<- keyword
     },
 
     read = function(options = list()) {
-      .read_function(format_options(options))
+      .read_function(format_function(options))
     },
 
     write = function(value, options = list()) {
-      .write_function(value, ormat_options(options))
+      .write_function(value, format_function(options))
     },
 
-    format_options = function(options) {
+    format_function = function(options) {
       if (!is.list(options)) options <- list(resource = options)
 
       # Merge in default options if they have not been set.
@@ -197,8 +231,17 @@ adapter <- setRefClass('adapter',
         if (!is.element(name <- names(.default_options)[i], names(options)))
           options[[name]] <- .default_options[[i]]
 
-      .format_options(options)
+      .format_function(options)
+    },
+
+    show = function() {
+      has_default_options <- length(.default_options) > 0
+      cat("A syberia IO adapter of type ", sQuote(.keyword), ' with',
+          if (has_default_options) '' else ' no', ' default options',
+          if (has_default_options) ': ' else '.', "\n", sep = '')
+      if (has_default_options) print(.default_options)
     }
   )
 )
+
 
