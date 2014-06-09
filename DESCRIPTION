@@ -16,7 +16,8 @@ Imports:
     devtools,
     memoise
 Suggests:
-    testthat
+    testthat,
+    caret
 License: MIT
 LazyData: true
 Roxygen: list(wrap = FALSE)
