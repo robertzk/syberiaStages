@@ -52,7 +52,6 @@ evaluation_stage <- function(evaluation_parameters) {
      'validation plot' = evaluation_stage_validation_plot,
      auc = evaluation_stage_auc
   )
-
 }
 
 #' Store necessary information for evaluation stage.
@@ -74,7 +73,6 @@ evaluation_stage <- function(evaluation_parameters) {
 #' @return a function suitable for use in a stageRunner.
 evaluation_stage_generate_options <- function(params) {
   function(modelenv) {
-
     modelenv$evaluation_stage <- params
     # TODO: (RK) Remove this to use the IO adapter once that has been written.
     # In order to grab the data as what it looked like prior to any data preparation,
@@ -85,12 +83,9 @@ evaluation_stage_generate_options <- function(params) {
     raw_data <- stagerunner:::treeSkeleton(
       active_runner()$stages$data)$first_leaf()$object$cached_env$data
 
-
-    # subset the raw_data to get the validation rows
-    first_validation_row <- round(modelenv$evaluation_stage$train_percent * nrow(raw_data)) + 1
-    last_validation_row <- nrow(raw_data)
-    validation_rows <- first_validation_row:last_validation_row
-
+    validation_rows <-
+      seq(modelenv$evaluation_stage$train_percent * nrow(raw_data) + 1,
+          nrow(raw_data))
     # The validation data is the last (1 - train_percent) of the dataframe.
     validation_data <- raw_data[validation_rows, ]
     score <- modelenv$model_stage$model$predict(validation_data)
