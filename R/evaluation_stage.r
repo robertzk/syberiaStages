@@ -91,8 +91,9 @@ evaluation_stage_generate_options <- function(params) {
       active_runner()$stages$data)$first_leaf()$object$cached_env$data
 
   
-    if(modelenv$evaluation_stage$random_sample){
-      stopifnot('seed' %in% names(evaluation_parameters))
+    if (modelenv$evaluation_stage$random_sample) {
+      stopifnot('seed' %in% names(modelenv$evaluation_stage) &&
+                is.numeric(modelenv$evaluation_stage$seed))
       set.seed(modelenv$evaluation_stage$seed) 
       training_rows <- createDataPartition(factor(raw_data[, modelenv$evaluation_stage$dep_var]), 
                                            p = modelenv$evaluation_stage$train_percent, list = FALSE, times = modelenv$evaluation_stage$times)[,1]  
