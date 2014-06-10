@@ -16,30 +16,30 @@ import_stage <- function(import_options) {
 #'   These adapter parametrizations will get converted to legitimate
 #'   IO adapters. (See the "adapter" reference class.)
 build_import_stagerunner <- function(import_options) {
-  stages <- lapply(seq_along(import_options), function(index) {
+  stages <- Reduce(append, lapply(seq_along(import_options), function(index) {
     adapter <- names(import_options)[index] %||% default_adapter()
     adapter <- fetch_adapter(adapter)
     opts <- import_options[[index]]
 
-    function(modelenv) {
+    setNames(list(function(modelenv) {
       # Only run if data isn't already loaded
       if (!'data' %in% ls(modelenv)) {
         attempt <- suppressWarnings(suppressMessages(
           tryCatch(adapter$read(opts), error = function(e) FALSE)))
-        if (!identical(attempt, FALSE)) {
+        if (!identical(attempt, FALSE) && !identical(attempt, NULL)) {
           modelenv$import_stage$adapter <- adapter
           modelenv$data <- attempt
         }
       }
-    }
-  })
-  names(stages) <- vapply(stages, function(stage)
-    paste0("Import from ", environment(stage)$adapter$.keyword), character(1))
+    }), adapter$.keyword)
+  }))
+  names(stages) <- vapply(names(stages), function(stage_name)
+    paste0("Import from ", stage_name), character(1))
 
   # Always verify the data was loaded correctly in a separate stageRunner step.
   stages[[length(stages) + 1]] <- function(modelenv) {
     if (!'data' %in% ls(modelenv))
-      stop("Failed to load data from all data sources")
+      stop("Failed to load data from all data sources", call. = FALSE)
     
     # TODO: (RK) Move this somewhere else.
     modelenv$import_stage$variable_summaries <-

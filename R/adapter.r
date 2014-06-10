@@ -29,7 +29,12 @@ default_adapter <- function() {
 fetch_adapter <- function(keyword) {
   adapters <- syberiaStructure:::get_cache('adapters')
   keyword <- tolower(keyword)
-  if (!is.element(keyword, names(adapters))) {
+  is_built_in <- is.element(keyword, names(built_in_adapters))
+  if (!is.element(keyword, names(adapters)) ||
+      (!is_built_in && fetch_custom_adapter(keyword, modified_check = TRUE))) {
+    # If this adapter is not cached, or is a custom adapter and has been
+    # modified since being cached, re-compute it.
+
     if (is.null(adapters)) adapters <- list()
     new_adapter <-
       if (is.element(keyword, names(built_in_adapters)))
@@ -54,8 +59,10 @@ fetch_adapter <- function(keyword) {
 #' the definition of the adapter reference class.)
 #'
 #' @param keyword character. The keyword for the adapter (e.g., 'file', 's3', etc.)
+#' @param modified_check logical. If \code{TRUE}, will return a logical indicating
+#'    whether or not the customer adapter has been modified. By default, \code{FALSE}.
 #' @return an \code{adapter} object (defined in this package, syberiaStages)
-fetch_custom_adapter <- function(keyword) {
+fetch_custom_adapter <- function(keyword, modified_check = FALSE) {
   # TODO: (RK) Better multi-project support
   adapters_path <- file.path(syberia_root(), 'lib', 'adapters')
   valid_adapters <- vapply(syberia_objects('', adapters_path), function(x)
@@ -71,9 +78,13 @@ fetch_custom_adapter <- function(keyword) {
   adapter_index <- which(valid_adapters == keyword)[1]
   adapter_file <- names(valid_adapters)[adapter_index]
   filename <- file.path(adapters_path, adapter_file)
-  syberiaStructure:::syberia_resource_with_modification_tracking(
-    filename, root = syberia_root(filename), provides = provided_env)$value()
-  parse_custom_adapter(provided_env, valid_adapters[adapter_index])
+  resource <- syberiaStructure:::syberia_resource_with_modification_tracking(
+    filename, root = syberia_root(filename), provides = provided_env, body = FALSE)
+
+  if (identical(modified_check, FALSE)) {
+    resource$value()
+    parse_custom_adapter(provided_env, valid_adapters[adapter_index])
+  } else resource$modified
 }
 
 #' Ensures a custom adapter resource is valid and returns the corresponding
@@ -94,6 +105,7 @@ parse_custom_adapter <- function(provided_env, type) {
   format_fn <- parse_custom_functions(c('format'), provided_env,
                                       type, 'adapter', strict = FALSE)
   if (!is.null(format_fn$format)) args$format_function <- format_fn$format
+  args$keyword <- type
 
   # TODO: (RK) Read defaults for adapter from syberia project config file.
   do.call(adapter$new, args)
