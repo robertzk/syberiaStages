@@ -89,7 +89,7 @@ evaluation_stage_generate_options <- function(params) {
     # stageRunner we are attached to is in `active_runner()`.
     raw_data <- stagerunner:::treeSkeleton(
       active_runner()$stages$data)$first_leaf()$object$cached_env$data
-    
+    # TODO: (TL) need to manually run munge procedure to filter out bad loans/loans with too many missing values
     
     if (modelenv$evaluation_stage$random_sample) {
       stopifnot('seed' %in% names(modelenv$evaluation_stage) &&
