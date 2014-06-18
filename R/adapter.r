@@ -203,7 +203,7 @@ construct_s3_adapter <- function() {
     # pass it along to the s3read function.
     args <- list(obj = object, name = opts$resource)
     if (is.element('s3path', names(opts))) args$.path <- opts$s3path
-    do.call(s3mpi::s3read, args)
+    do.call(s3mpi::s3store, args)
   }
 
   # TODO: (RK) Read default_options in from config, so a user can
