@@ -206,9 +206,17 @@ construct_s3_adapter <- function() {
     do.call(s3mpi::s3store, args)
   }
 
+  format_function <- function(opts) {
+    environment(common_file_formatter) <- environment()
+    opts <- common_file_formatter(opts)
+    if (is.element('bucket', names(opts)))
+      opts$s3path <- paste0("s3://", opts$bucket, "/")
+    opts
+  }
+
   # TODO: (RK) Read default_options in from config, so a user can
   # specify default options for various adapters.
-  adapter(read_function, write_function, format_function = common_file_formatter,
+  adapter(read_function, write_function, format_function = format_function,
           default_options = list(), keyword = 's3')
 }
 
@@ -245,16 +253,16 @@ adapter <- setRefClass('adapter',
     },
 
     read = function(options = list()) {
-      .read_function(format_function(options))
+      .read_function(format(options))
     },
 
     write = function(value, options = list()) {
-      .write_function(value, format_function(options))
+      .write_function(value, format(options))
     },
 
     store = function(...) { write(...) },
 
-    format_function = function(options) {
+    format = function(options) {
       if (!is.list(options)) options <- list(resource = options)
 
       # Merge in default options if they have not been set.
@@ -262,6 +270,7 @@ adapter <- setRefClass('adapter',
         if (!is.element(name <- names(.default_options)[i], names(options)))
           options[[name]] <- .default_options[[i]]
 
+      environment(.format_function) <<- environment()
       .format_function(options)
     },
 
