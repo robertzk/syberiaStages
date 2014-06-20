@@ -3,10 +3,13 @@
 \alias{fetch_custom_adapter}
 \title{Fetch a custom syberia IO adapter.}
 \usage{
-fetch_custom_adapter(keyword)
+fetch_custom_adapter(keyword, modified_check = FALSE)
 }
 \arguments{
 \item{keyword}{character. The keyword for the adapter (e.g., 'file', 's3', etc.)}
+
+\item{modified_check}{logical. If \code{TRUE}, will return a logical indicating
+whether or not the customer adapter has been modified. By default, \code{FALSE}.}
 }
 \value{
 an \code{adapter} object (defined in this package, syberiaStages)
