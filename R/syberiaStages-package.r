@@ -8,5 +8,5 @@
 #'
 #' @name syberiaStages
 #' @docType package
-#' @import devtools memoise stageRunner syberiaStructure
+#' @import devtools memoise stagerunner syberiaStructure
 NULL
