@@ -19,7 +19,7 @@ Imports:
     memoise,
     syberiaStructure
 Suggests:
-    testthat
+    testthatsomemore
 License: MIT
 LazyData: true
 Roxygen: list(wrap = FALSE)
