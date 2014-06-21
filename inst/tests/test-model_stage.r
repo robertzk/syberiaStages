@@ -1,4 +1,5 @@
 context("model stage")
+require(tundra)
 
 .num_rows <- 35
 simple_model <- function(extra = function(env) {}) {
