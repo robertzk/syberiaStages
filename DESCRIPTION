@@ -16,7 +16,8 @@ Depends:
     R (>= 3.0.0)
 Imports:
     devtools,
-    memoise
+    memoise,
+    syberiaStructure
 Suggests:
     testthat
 License: MIT
