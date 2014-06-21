@@ -49,6 +49,13 @@ fetch_adapter <- function(keyword) {
   adapters[[keyword]]
 }
 
+#' Publically exported version of \code{fetch_adapter}.
+#'
+#' @param keyword character. The keyword for the adapter (e.g., 'file', 's3', etc.)
+#' @export
+#' @seealso \code{\link{fetch_adapter}}
+fetch_syberia_adapter <- fetch_adapter
+
 #' Fetch a custom syberia IO adapter.
 #'
 #' Custom adapters are defined in \code{lib/adapters} from the root

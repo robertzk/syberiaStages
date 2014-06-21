@@ -33,19 +33,21 @@ build_import_stagerunner <- function(import_options) {
       }
     }), adapter$.keyword)
   }))
-  names(stages) <- vapply(names(stages), function(stage_name)
-    paste0("Import from ", stage_name), character(1))
+  if (length(stages) > 0)
+    names(stages) <- vapply(names(stages), function(stage_name)
+      paste0("Import from ", stage_name), character(1))
 
   # Always verify the data was loaded correctly in a separate stageRunner step.
-  stages[[length(stages) + 1]] <- function(modelenv) {
-    if (!'data' %in% ls(modelenv))
-      stop("Failed to load data from all data sources", call. = FALSE)
-    
-    # TODO: (RK) Move this somewhere else.
-    modelenv$import_stage$variable_summaries <-
-      statsUtils::variable_summaries(modelenv$data) 
-  }
-  names(stages)[length(stages)] <- "(Internal) Verify data was loaded" 
+
+  stages <- append(stages,
+    list("(Internal) Verify data was loaded" = function(modelenv) {
+      if (!'data' %in% ls(modelenv))
+        stop("Failed to load data from all data sources", call. = FALSE)
+      
+      # TODO: (RK) Move this somewhere else.
+      modelenv$import_stage$variable_summaries <-
+        statsUtils::variable_summaries(modelenv$data) 
+    }))
 
   stages
 }
