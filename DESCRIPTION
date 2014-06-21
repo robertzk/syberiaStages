@@ -17,6 +17,7 @@ Depends:
 Imports:
     devtools,
     memoise,
+    stagerunner,
     syberiaStructure
 Suggests:
     testthatsomemore
