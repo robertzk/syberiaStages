@@ -8,5 +8,5 @@
 #'
 #' @name syberiaStages
 #' @docType package
-#' @import devtools memoise stagerunner syberiaStructure statsUtils
+#' @import devtools memoise stagerunner syberiaStructure statsUtils mungebits
 NULL

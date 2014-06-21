@@ -19,7 +19,8 @@ Imports:
     memoise,
     stagerunner,
     syberiaStructure,
-    statsUtils
+    statsUtils,
+    mungebits
 Suggests:
     testthatsomemore
 License: MIT
