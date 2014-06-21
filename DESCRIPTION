@@ -18,7 +18,8 @@ Imports:
     devtools,
     memoise,
     stagerunner,
-    syberiaStructure
+    syberiaStructure,
+    statsUtils
 Suggests:
     testthatsomemore
 License: MIT
