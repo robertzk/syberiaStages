@@ -1,0 +1,28 @@
+language: c
+before_install:
+- curl -OL http://raw.github.com/craigcitro/r-travis/master/scripts/travis-tool.sh
+- chmod 755 ./travis-tool.sh
+- ./travis-tool.sh bootstrap
+install:
+- ./travis-tool.sh install_deps
+- ./travis-tool.sh install_r devtools microbenchmark knitr arules pbapply memoise stringr testthat
+- ./travis-tool.sh install_github robertzk/Ramd 
+- ./travis-tool.sh install_github robertzk/stagerunner robertzk/tundra
+- ./travis-tool.sh install_github robertzk/statsUtils robertzk/mungebits
+- ./travis-tool.sh install_github robertzk/syberiaMungebits
+- ./travis-tool.sh install_github robertzk/syberiaStages robertzk/syberiaStructure
+script: ./travis-tool.sh run_tests
+after_failure:
+- ./travis-tool.sh dump_logs
+notifications:
+  email:
+    on_success: change
+    on_failure: change
+  hipchat:
+    on_success: change
+    on_failure: change
+    template:
+    - '%{repository}#%{build_number} (%{branch} - %{commit} : %{author}): %{message}
+      | Details: %{build_url} | Changes: %{compare_url}'
+    rooms:
+      secure: JrgAb2CBX2QovuYo2HQ8vPaqP46L2lVGd/dlxgblAqqqBzv5sPmfjasMtxj25gNHABIPuOjn3jSqzC0gOJahJ7SCKJbplAgR2lYEbclkUYWrcxPivdDnHmotztBbRRDMC+G5F1wM2NBrrJRJDS3SbgVpIMD16dVO31nbFyzzBa0=
