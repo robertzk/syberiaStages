@@ -68,12 +68,12 @@ model_stage <- function(model_parameters) {
 fetch_model_container <- function(type) {
   # TODO: (RK) Should we be using syberia_objects for this?
   prefilename <- file.path(syberia_root(), 'lib', 'classifiers', type)
-  if (!(file.exists(filename <- pp('#{prefilename}.r')) ||
-        file.exists(filename <- pp('#{prefilename}.R')))) {
-    if (exists(model_fn <- pp('tundra_#{type}'))) return(get(model_fn))
+  if (!(file.exists(filename <- paste0(prefilename, '.r')) ||
+        file.exists(filename <- paste0(prefilename, '.R')))) {
+    if (exists(model_fn <- paste0('tundra_', type))) return(get(model_fn))
     stop("Missing tundra container for keyword '", type, "'. ",
          "It must exist in the tundra package or be present in ",
-         pp("lib/classifiers/#{type}.R"), call. = FALSE)
+         paste0("lib/classifiers/", type, ".R"), call. = FALSE)
   }
   
   provided_env <- new.env()
