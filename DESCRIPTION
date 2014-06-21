@@ -8,13 +8,16 @@ Description: Syberia provides an opinionated unified framework for
     problems of classifier-specific data preparation and
     classifier-specific modeling parameters.
     syberiaStages is a library of common Syberia stages.
+Author: Robert Krzyzanowski <technoguyrob@gmail.com>
+Maintainer: Robert Krzyzanowski <technoguyrob@gmail.com>
 Authors@R: c(person("Robert", "Krzyzanowski",
     email = "technoguyrob@gmail.com", role = c("aut", "cre")))
 Depends:
     R (>= 3.0.0)
 Imports:
     devtools,
-    memoise
+    memoise,
+    syberiaStructure
 Suggests:
     testthat
 License: MIT
