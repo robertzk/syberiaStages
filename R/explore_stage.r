@@ -1,8 +1,17 @@
 #' @export
 explore_stage <- function(modelenv,pars) {
   stagerunner_input <- list(
-    "DQ Check"  = dqcheck(pars)
+    "Visualization" = visualize(),
+    "DQ Check"      = dqcheck(pars)
   ) 
+}
+
+# Do some basic data visualizations
+visualize <- function() {
+  function(modelenv) {
+    source("~/dev/avant-models/scripts/visualizeData.R")
+    plotHistograms(modelenv$data)
+  }
 }
 
 # We want to see how well the data are segmented by each variable in turn.
