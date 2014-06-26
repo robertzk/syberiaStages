@@ -2,6 +2,7 @@
 
 export(data_stage)
 export(evaluation_stage)
+export(explore_stage)
 export(export_stage)
 export(fetch_model_container)
 export(import_stage)

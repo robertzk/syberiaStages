@@ -25,6 +25,11 @@ evaluation_stage(evaluation_parameters)
        output CSV. If not given, no ID column will be included.
      \item cutoff. (Optional) A cutoff for binary classification predictions: above the
        cutoff means a prediction 1, and otherwise a 0. The default is 0.5.
+     \item random_sample (Optional) An indicator for specifying whether the one has used
+     random sample to setup validation data.
+     \item seed (Optional) the seed used to generate the random validation set.
+     \item times (Optional) number of times one wants to draw random sample, right now only supports 1.
+     \item verbose (Optional) controls whether output/plots are printed to the screen
     }}
 }
 \value{

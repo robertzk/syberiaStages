@@ -15,7 +15,7 @@ The mentioned columns must both be numeric.}
 \item{cutoff}{numeric. The cutoff at which to assign numbers greater a 1
 for prediction purposes, and 0 otherwise. The default is 0.5.}
 
-\item{plot.it}{logical. Whether or not to plot the confusion matrix as a
+\item{pslot.it}{logical. Whether or not to plot the confusion matrix as a
 four fold diagram. The default is \code{TRUE}.}
 
 \item{xlab}{character. The labels for the rows (\code{dep_var}). The default
