@@ -11,10 +11,12 @@ explore_stage <- function(modelenv,pars) {
     do_visualize = pars$do_visualize %||% FALSE,
     do_check_sig = pars$do_check_sig %||% FALSE,
     do_check_excessive_levels = pars$do_check_excessive_levels %||% FALSE,
+    do_check_unpopulated_levels = pars$do_check_unpopulated_levels %||% FALSE,
 
     # parameters for functions
     depvarname = pars$depvarname %||% 'dep_var',
-    maxlevels = pars$maxlevels  %||% 10
+    maxlevels = pars$maxlevels  %||% 10,
+    min_cts_in_level = pars$min_cts_in_level %||% 100
   )
 
   stagerunner_input <- list()
@@ -22,7 +24,7 @@ explore_stage <- function(modelenv,pars) {
   if (pars$do_visualize) stagerunner_input[["Visualization"]] <- visualize()
   if (pars$do_check_sig) stagerunner_input[["Check for significant differences in 1s and 0s"]] <- check_sig(pars)
   if (pars$do_check_excessive_levels) stagerunner_input[["Check for excessive number of levels"]] <- check_excessive_levels(pars)
-
+  if (pars$do_check_unpopulated_levels) stagerunner_input[["Checking for unpopulated factor levels"]] <- check_unpopulated_levels(pars)
 }
 
 # Do some basic data visualizations
@@ -105,6 +107,19 @@ check_excessive_levels <- function(pars) {
           n <- length(table(column))
           if (n<=10 && n>0) cat('\033[0;33m',col,' is not a factor, but has only ',n,' levels\033[0m\n',sep='')
         }
+      }
+    }
+  }
+}
+
+check_unpopulated_levels <- function(pars) {
+  force(pars)
+  function(modelenv) {
+    for (col in names(modelenv$data)) {
+      column <- modelenv$data[[col]]
+      if (is.factor(column)) {
+        unpopulated_levels <- levels(x)[table(x) < pars$min_cts_in_level]
+        if (length(unpopulated_levels)>0) cat(col," has the following sparse levels: ",paste0(unpopulated_levels,collapse=', '),'\n',sep='')
       }
     }
   }
