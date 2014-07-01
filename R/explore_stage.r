@@ -8,6 +8,7 @@ explore_stage <- function(modelenv,pars) {
   
   pars <- list(
     # which functions to execute
+    do_var_quality_checks = pars$do_var_quality_check %||% TRUE,
     do_visualize = pars$do_visualize %||% FALSE,
     do_check_sig = pars$do_check_sig %||% FALSE,
     do_check_excessive_levels = pars$do_check_excessive_levels %||% FALSE,
@@ -21,12 +22,38 @@ explore_stage <- function(modelenv,pars) {
 
   stagerunner_input <- list()
 
+  if (pars$do_var_quality_checks) stagerunner_input[["Variable quality checks"]] <- check_var_quality(pars)
   if (pars$do_visualize) stagerunner_input[["Visualization"]] <- visualize()
   if (pars$do_check_sig) stagerunner_input[["Check for significant differences in 1s and 0s"]] <- check_sig(pars)
   if (pars$do_check_excessive_levels) stagerunner_input[["Check for excessive number of levels"]] <- check_excessive_levels(pars)
   if (pars$do_check_unpopulated_levels) stagerunner_input[["Checking for unpopulated factor levels"]] <- check_unpopulated_levels(pars)
 
   stagerunner_input
+}
+
+# Do basic variable quality checks
+check_var_quality <- function(pars) {
+  force(pars)
+  function(modelenv) {
+    
+    for (col in colnames(modelenv$data)) {
+      cat(col,": ",sep='')
+
+      # check for all NA
+      if (all(is.na(modelenv$data[[col]]))) {
+        cat('\033[0;31m is all NA\033[0m\n',sep='')
+        next
+      }
+
+      # check for only one level
+      if (length(table(head(modelenv$data[[col]],n=1000))) == 1) {
+        if (length(table(modelenv$data[[col]]))==1) {
+          cat('\033[0;31m has only one level\033[0m\n',sep='')
+          next
+        }
+      }
+    }
+  }
 }
 
 # Do some basic data visualizations
@@ -48,6 +75,7 @@ check_sig <- function(pars) {
     zeros <- subset(modelenv$data,subset=!whichones)
     for (col in colnames(modelenv$data)) {
       cat(col,": ",sep='')
+
       if (is.factor(modelenv$data[[col]])) {
         cat("is factor\n")
       } else if (is.character(modelenv$data[[col]])) {
