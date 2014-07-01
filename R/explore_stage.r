@@ -25,6 +25,8 @@ explore_stage <- function(modelenv,pars) {
   if (pars$do_check_sig) stagerunner_input[["Check for significant differences in 1s and 0s"]] <- check_sig(pars)
   if (pars$do_check_excessive_levels) stagerunner_input[["Check for excessive number of levels"]] <- check_excessive_levels(pars)
   if (pars$do_check_unpopulated_levels) stagerunner_input[["Checking for unpopulated factor levels"]] <- check_unpopulated_levels(pars)
+
+  stagerunner_input
 }
 
 # Do some basic data visualizations
@@ -73,14 +75,50 @@ check_sig <- function(pars) {
         # Remove NAs
         x <- x[!is.na(x)]
         y <- y[!is.na(y)]
- 
-        # Do the t-test and print results
-        tmp <- t.test(x,y)
-        p <- tmp$p.value
-        if (p<0.05) {
-          cat('\033[0;31mp-value = ',p,'\033[0m\n',sep='')
-        } else {
-          cat("p-value = ",p,'\n',sep='')
+
+        if (length(table(head(x,n=1000)))<10 & length(table(head(y,n=1000)))<10) { # the variable is factor-like
+        
+          # convert x and y to factors with common levels
+          all_levels <- as.character(unique(c(x,y)))
+          x <- factor(x,levels=all_levels)
+          y <- factor(y,levels=all_levels)
+          
+          # tabulate x and y
+          t1 <- table(x)
+          t2 <- table(y)
+          
+          # consider only bins with at least 5 counts
+          select <- t1>=5 & t2>=5
+          t1 <- t1[select]
+          t2 <- t2[select]
+          
+          # compute the chi-squared
+          f1 <- sqrt(sum(t2)/sum(t1))
+          f2 <- sqrt(sum(t1)/sum(t2))
+          X2 <- sum( (f2*t2-f1*t1)^2 / (t1+t2) )
+          
+          # get the p-value
+          p <- 1-pchisq(X2,4)
+
+          if (p<0.05) {
+            cat('\033[0;31mp-value = ',p,'\033[0m',sep='')
+          } else {
+            cat("p-value = ",p,sep='')
+          }
+          cat(' (X2-test)\n')
+
+	} else { # the variable is more or less continuous 
+
+          # Do the t-test and print results
+          tmp <- t.test(x,y)
+          p <- tmp$p.value
+          if (p<0.05) {
+            cat('\033[0;31mp-value = ',p,'\033[0m',sep='')
+          } else {
+            cat("p-value = ",p,sep='')
+          }
+          cat(' (t-test)\n')
+
         }
       }
     }
