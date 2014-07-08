@@ -8,7 +8,8 @@ default_adapter <- function() {
   # Grab the default adapter if it is not provided from the Syberia
   # project's configuration file. If no default is specified there,
   # we will assume we're reading from a file.
-  default_adapter <- syberia_config()$default_adapter %||% 'file'
+  default_adapter <-
+    (if (!is.null(syberia_root())) syberia_config()$default_adapter) %||% 'file'
 }
 
 #' Fetch a syberia IO adapter.
