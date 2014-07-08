@@ -6,7 +6,7 @@
 import_stage(import_options)
 }
 \arguments{
-\item{import_options}{a list. The available import options. Will differ
+\item{import_options}{list. The available import options. Will differ
 depending on the adapter. (default is file adapter)}
 }
 \description{

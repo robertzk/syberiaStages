@@ -67,17 +67,24 @@ model_stage <- function(model_parameters) {
 #' @export
 fetch_model_container <- function(type) {
   # TODO: (RK) Should we be using syberia_objects for this?
-  prefilename <- file.path(syberia_root(), 'lib', 'classifiers', type)
-  if (!(file.exists(filename <- paste0(prefilename, '.r')) ||
-        file.exists(filename <- paste0(prefilename, '.R')))) {
-    if (exists(model_fn <- paste0('tundra_', type))) return(get(model_fn))
+  base <- file.path(syberia_root(), 'lib', 'classifiers')
+  potential_object <-
+    syberiaStructure:::syberia_objects(type, base = base, fixed = TRUE)
+  if (length(potential_object) == 0) {
+    if (exists(model_fn <- pp('tundra_#{type}'))) return(get(model_fn))
     stop("Missing tundra container for keyword '", type, "'. ",
          "It must exist in the tundra package or be present in ",
-         paste0("lib/classifiers/", type, ".R"), call. = FALSE)
+         pp("lib/classifiers/#{type}.R"), call. = FALSE)
+  } else if (length(potential_object) > 1) {
+    stop("Found multiple classifiers with keyword ", sQuote(type), ", namely: ",
+         paste0(potential_objects, collapse = ', '), call. = FALSE)
+  } else {
+    filename <- file.path(base, potential_object)
   }
   
   provided_env <- new.env()
-  source(filename, local = provided_env)
+  syberiaStructure:::syberia_resource_with_modification_tracking(
+    filename, root = syberia_root(filename), provides = provided_env)$value()
   provided_functions <- parse_custom_classifier(provided_env, type)
 
   function(munge_procedure = list(), default_args = list(), internal = list()) {
@@ -97,19 +104,6 @@ fetch_model_container <- function(type) {
 #' @return a list containing keys "train" and "predict" indicating the train
 #'    and predict functions.
 parse_custom_classifier <- function(provided_env, type) {
-  provided_fns <- list(train = NULL, predict = NULL)
-  for (function_type in names(provided_fns)) {
-    fn <- Filter(
-      function(x) is.function(provided_env[[x]]),
-      grep(function_type, ls(provided_env), value = TRUE)
-    )
-    error <- function(snip = 'a') paste0("The custom classifier in lib/classifiers/", type,
-      ".R should define ", snip, " '", testthat::colourise(function_type, 'green'), "' function.")
-    if (length(fn) == 0) stop(error(), call. = FALSE)
-    else if (length(fn) > 1)
-      stop(error('only one'), " Instead, you defined ", length(fn), ", namely: ",
-           paste0(fn, collapse = ', '), call. = FALSE)
-    provided_fns[[function_type]] <- provided_env[[fn]]
-  }
-  provided_fns
+  parse_custom_functions(c('train', 'predict'), provided_env, type, 'classifier')
 }
+
