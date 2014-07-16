@@ -77,7 +77,7 @@ fetch_model_container <- function(type) {
          pp("lib/classifiers/#{type}.R"), call. = FALSE)
   } else if (length(potential_object) > 1) {
     stop("Found multiple classifiers with keyword ", sQuote(type), ", namely: ",
-         paste0(potential_objects, collapse = ', '), call. = FALSE)
+         paste0(potential_object, collapse = ', '), call. = FALSE)
   } else {
     filename <- file.path(base, potential_object)
   }
