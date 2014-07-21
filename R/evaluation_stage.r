@@ -44,6 +44,7 @@ evaluation_stage <- function(evaluation_parameters) {
     output = evaluation_parameters$output,
     cutoff = evaluation_parameters$cutoff %||% 0.5,
     train_percent = evaluation_parameters$percent %||% 0.8,
+    validation_rows = evaluation_parameters$validation_rows %||% NULL,
     dep_var = evaluation_parameters$dep_var %||% 'dep_var',
     id_column = evaluation_parameters$id_column,
     random_sample = evaluation_parameters$random_sample %||% FALSE,
@@ -90,8 +91,10 @@ evaluation_stage_generate_options <- function(params) {
       active_runner()$stages$data)$first_leaf()$object$cached_env$data
 
     # TODO: (TL) need to manually run munge procedure to filter out bad loans/loans with too many missing values
-    
-    if (modelenv$evaluation_stage$random_sample) {
+    if (!is.null(modelenv$evaluation_stage$validation_rows)) {
+      validation_rows <- modelenv$evaluation_stage$validation_rows
+    }
+    else if (modelenv$evaluation_stage$random_sample) {
       stopifnot('seed' %in% names(modelenv$evaluation_stage) &&
                   is.numeric(modelenv$evaluation_stage$seed))
       Ramd::packages('caret') # Make sure caret is installed and loaded
