@@ -34,35 +34,31 @@
 #'      random sample to setup validation data.
 #'      \item seed (Optional) the seed used to generate the random validation set.
 #'      \item times (Optional) number of times one wants to draw random sample, right now only supports 1.
-#'      \item verbose (Optional) controls whether output/plots are printed to the screen
 #'     }
 #' @export
 #' @return a stageRunner that performs AUC, confusing matrix, and validation
 #'   plotting.
 evaluation_stage <- function(evaluation_parameters) {
   stopifnot('output' %in% names(evaluation_parameters))
-
+  
   params <- list(
     output = evaluation_parameters$output,
     cutoff = evaluation_parameters$cutoff %||% 0.5,
     train_percent = evaluation_parameters$percent %||% 0.8,
     dep_var = evaluation_parameters$dep_var %||% 'dep_var',
     id_column = evaluation_parameters$id_column,
-    make_plot = evaluation_parameters$make_plot,
     random_sample = evaluation_parameters$random_sample %||% FALSE,
     seed =  evaluation_parameters$seed, 
-    times =  evaluation_parameters$times %||% 1,
-    verbose = evaluation_parameters$verbose %||% TRUE
+    times =  evaluation_parameters$times %||% 1
   )
-
+  
   # This list of functions will be incorporated into the full model stageRunner
   list(
-     '(Internal) Generate evaluation options' = evaluation_stage_generate_options(params),
-     'confusion matrix' = evaluation_stage_confusion_matrix,
-     'validation plot' = evaluation_stage_validation_plot,
-     auc = evaluation_stage_auc
+    '(Internal) Generate evaluation options' = evaluation_stage_generate_options(params),
+    'confusion matrix' = evaluation_stage_confusion_matrix,
+    'validation plot' = evaluation_stage_validation_plot,
+    auc = evaluation_stage_auc
   )
-
 }
 
 #' Store necessary information for evaluation stage.
@@ -84,7 +80,6 @@ evaluation_stage <- function(evaluation_parameters) {
 #' @return a function suitable for use in a stageRunner.
 evaluation_stage_generate_options <- function(params) {
   function(modelenv) {
-
     modelenv$evaluation_stage <- params
     # TODO: (RK) Remove this to use the IO adapter once that has been written.
     # In order to grab the data as what it looked like prior to any data preparation,
@@ -94,10 +89,11 @@ evaluation_stage_generate_options <- function(params) {
     # stageRunner we are attached to is in `active_runner()`.
     raw_data <- stagerunner:::treeSkeleton(
       active_runner()$stages$data)$first_leaf()$object$cached_env$data
-
+    # TODO: (TL) need to manually run munge procedure to filter out bad loans/loans with too many missing values
+    
     if (modelenv$evaluation_stage$random_sample) {
       stopifnot('seed' %in% names(modelenv$evaluation_stage) &&
-                is.numeric(modelenv$evaluation_stage$seed))
+                  is.numeric(modelenv$evaluation_stage$seed))
       Ramd::packages('caret') # Make sure caret is installed and loaded
       set.seed(modelenv$evaluation_stage$seed) 
       training_rows <- createDataPartition(factor(raw_data[, modelenv$evaluation_stage$dep_var]), 
@@ -111,20 +107,20 @@ evaluation_stage_generate_options <- function(params) {
     score <- modelenv$model_stage$model$predict(validation_data)
     # TODO: (RK) Replace this with data partitions after they've been 
     # incorporated into syberia.
-
+    
     modelenv$evaluation_stage$prediction_data <-
       data.frame(dep_var = validation_data[[modelenv$evaluation_stage$dep_var]],
                  score = score)
-
+    
     if (!is.null(id_column <- modelenv$evaluation_stage$id_column))
       modelenv$evaluation_stage$prediction_data[[id_column]] <-
-        validation_data[[id_column]]
-
+      validation_data[[id_column]]
+    
     write.csv(modelenv$evaluation_stage$prediction_data,
               paste0(modelenv$evaluation_stage$output, '.csv'), row.names = FALSE)
   }
 }
-  
+
 #' Compute the AUC in conjunction with \code{evaluation_stage}.
 #'
 #' The RoC, accuracy, sensitivity, and specificy information will be
@@ -150,8 +146,8 @@ evaluation_stage_auc <- function(modelenv) {
       accuracy = AUC::auc(accuracy(score, factor(dep_var))),
       sensitivity = AUC::auc(sensitivity(score, factor(dep_var))),
       specificity = AUC::auc(specificity(score, factor(dep_var)))
-  )})
-  if (modelenv$evaluation_stage$verbose) print(modelenv$evaluation_stage$auc)
+    )})
+  print(modelenv$evaluation_stage$auc)
 }
 
 #' Compute a confusion matrix and plot it.
@@ -164,12 +160,12 @@ evaluation_stage_confusion_matrix <- function(modelenv) {
   confusion_matrix_arguments <- 
     list(modelenv$evaluation_stage$prediction_data,
          modelenv$evaluation_stage$cutoff,
-         plot.it = modelenv$evaluation_stage$verbose, xlab = c("dep_var = 0", "dep_var = 1"),
+         plot.it = TRUE, xlab = c("dep_var = 0", "dep_var = 1"),
          ylab = c("score = 0", "score = 1"), title = NULL)
   modelenv$evaluation_stage$confusion_matrix <-
     do.call(confusion_matrix, confusion_matrix_arguments)
 }
-  
+
 #' Draw a decile validation plot for a classification problem.
 #'
 #' This evaluation stage will produce a plot showing performance
@@ -215,7 +211,7 @@ evaluation_stage_validation_plot <- function(modelenv){
   dev.off()
   NULL
 }
-  
+
 
 #' Plot a confusion matrix for a given prediction set, and return the table.
 #' 
@@ -224,7 +220,7 @@ evaluation_stage_validation_plot <- function(modelenv){
 #'    The mentioned columns must both be numeric.
 #' @param cutoff numeric. The cutoff at which to assign numbers greater a 1
 #'    for prediction purposes, and 0 otherwise. The default is 0.5.
-#' @param pslot.it logical. Whether or not to plot the confusion matrix as a
+#' @param plot.it logical. Whether or not to plot the confusion matrix as a
 #'    four fold diagram. The default is \code{TRUE}.
 #' @param xlab character. The labels for the rows (\code{dep_var}). The default
 #'    is \code{c("dep_var = 0", "dep_var = 1")}.
@@ -236,9 +232,9 @@ confusion_matrix <- function(dataframe, cutoff = 0.5, plot.it = TRUE,
                              xlab = c("dep_var = 0", "dep_var = 1"),
                              ylab = c("score = 0", "score = 1"), title = NULL) {
   stopifnot(is.data.frame(dataframe) &&
-            all(c('score', 'dep_var') %in% colnames(dataframe)))
+              all(c('score', 'dep_var') %in% colnames(dataframe)))
   stopifnot(is.numeric(dataframe$score) && is.numeric(dataframe$dep_var))
-
+  
   dataframe$score <- ifelse(dataframe$score <= cutoff, 0, 1)
   categories <- dataframe$score * 2 + dataframe$dep_var
   confusion <- matrix(tabulate(1 + categories, 4), nrow = 2)
@@ -248,5 +244,3 @@ confusion_matrix <- function(dataframe, cutoff = 0.5, plot.it = TRUE,
                             conf.level = 0, margin = 1, main = title)
   confusion 
 }
-
-
