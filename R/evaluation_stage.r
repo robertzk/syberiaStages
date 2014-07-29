@@ -110,14 +110,11 @@ evaluation_stage_generate_options <- function(params) {
     score <- modelenv$model_stage$model$predict(validation_data)
     # TODO: (RK) Replace this with data partitions after they've been 
     # incorporated into syberia.
-
-    modelenv$evaluation_stage$prediction_data <-
-      data.frame(dep_var = validation_data[[modelenv$evaluation_stage$dep_var]],
-                 score = score)
-
+    
     if (!is.null(id_column <- modelenv$evaluation_stage$id_column))
-      modelenv$evaluation_stage$prediction_data[[id_column]] <-
-        validation_data[[id_column]]
+    modelenv$evaluation_stage$prediction_data <-
+      data.frame(loan_id = validation_data[[id_column]], dep_var = validation_data[[modelenv$evaluation_stage$dep_var]],
+                 score = score)
 
     write.csv(modelenv$evaluation_stage$prediction_data,
               paste0(modelenv$evaluation_stage$output, '.csv'), row.names = FALSE)
