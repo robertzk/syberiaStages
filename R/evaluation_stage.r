@@ -110,7 +110,7 @@ evaluation_stage_generate_options <- function(params) {
     
     if (!is.null(id_column <- modelenv$evaluation_stage$id_column))
     modelenv$evaluation_stage$prediction_data <-
-      data.frame(loand_id = validation_data[[id_column]], dep_var = validation_data[[modelenv$evaluation_stage$dep_var]],
+      data.frame(loan_id = validation_data[[id_column]], dep_var = validation_data[[modelenv$evaluation_stage$dep_var]],
                  score = score)
 
     write.csv(modelenv$evaluation_stage$prediction_data,
