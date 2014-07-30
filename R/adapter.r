@@ -149,11 +149,15 @@ construct_file_adapter <- function() {
   read_function <- function(opts) {
     # If the user provided any of the options below in their syberia model,
     # pass them along to read.csv
-    read_csv_params <- c('header', 'sep', 'quote', 'dec', 'fill', 'comment.char',
-                         'stringsAsFactors')
-    args <- list_merge(list(file = opts$resource, stringsAsFactors = FALSE),
-                       opts[read_csv_params])
-    do.call(read.csv, args)
+    if ('.rds' == substring(opts$resource, nchar(opts$resource) - 3, nchar(opts$resource)))
+      readRDS(opts$resource)
+    else {
+      read_csv_params <- c('header', 'sep', 'quote', 'dec', 'fill', 'comment.char',
+                           'stringsAsFactors')
+      args <- list_merge(list(file = opts$resource, stringsAsFactors = FALSE),
+                         opts[read_csv_params])
+      do.call(read.csv, args)
+    }
   }
 
   write_function <- function(object, opts) {
