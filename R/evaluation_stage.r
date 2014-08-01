@@ -119,6 +119,7 @@ evaluation_stage_generate_options <- function(params) {
       modelenv$evaluation_stage$prediction_data[[id_column]] <-
         validation_data[[id_column]]
 
+    dir.create(dirname(modelenv$evaluation_stage$output), FALSE, TRUE)
     write.csv(modelenv$evaluation_stage$prediction_data,
               paste0(modelenv$evaluation_stage$output, '.csv'), row.names = FALSE)
   }
@@ -205,6 +206,7 @@ evaluation_stage_validation_plot <- function(modelenv){
     sum(ordered_scores[xrows, 'dep_var']) / length(xrows)
   }) # TODO: (RK) Figure out if this can be done more cleanly with tapply.
   
+  dir.create(dirname(modelenv$evaluation_stage$output), FALSE, TRUE)
   png(filename = paste0(modelenv$evaluation_stage$output, '.png'))
   plot(xs, ys, type = 'l', col = 'darkgreen',
        main = 'Dependent variable capture v.s. score deciles',
