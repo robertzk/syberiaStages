@@ -34,6 +34,7 @@
 #'      random sample to setup validation data.
 #'      \item seed (Optional) the seed used to generate the random validation set.
 #'      \item times (Optional) number of times one wants to draw random sample, right now only supports 1.
+#'      \item validation_rows (Optional) specify explicit rows to use for validation
 #'     }
 #' @export
 #' @return a stageRunner that performs AUC, confusing matrix, and validation
@@ -48,7 +49,8 @@ evaluation_stage <- function(evaluation_parameters) {
     id_column = evaluation_parameters$id_column,
     random_sample = evaluation_parameters$random_sample %||% FALSE,
     seed =  evaluation_parameters$seed, 
-    times =  evaluation_parameters$times %||% 1
+    times =  evaluation_parameters$times %||% 1,
+    validation_rows = evaluation_parameters$validation_rows %||% NULL
   )
 
   # This list of functions will be incorporated into the full model stageRunner
@@ -91,7 +93,9 @@ evaluation_stage_generate_options <- function(params) {
 
     # TODO: (TL) need to manually run munge procedure to filter out bad loans/loans with too many missing values
     
-    if (modelenv$evaluation_stage$random_sample) {
+    if (!is.null(modelenv$evaluation_stage$validation_rows)) {
+      validation_rows <- modelenv$evaluation_stage$validation_rows
+    } else if (modelenv$evaluation_stage$random_sample) {
       stopifnot('seed' %in% names(modelenv$evaluation_stage) &&
                   is.numeric(modelenv$evaluation_stage$seed))
       Ramd::packages('caret') # Make sure caret is installed and loaded
@@ -100,7 +104,9 @@ evaluation_stage_generate_options <- function(params) {
                                            p = modelenv$evaluation_stage$train_percent, list = FALSE, times = modelenv$evaluation_stage$times)[,1]  
       
       validation_rows <- setdiff(seq(1, nrow(raw_data)), training_rows)
-    } else validation_rows <- seq(modelenv$evaluation_stage$train_percent * nrow(raw_data) + 1, nrow(raw_data))
+    } else {
+      validation_rows <- seq(modelenv$evaluation_stage$train_percent * nrow(raw_data) + 1, nrow(raw_data))
+    }
     
     # The validation data is the last (1 - train_percent) of the dataframe.
     validation_data <- raw_data[validation_rows, ]
