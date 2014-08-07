@@ -14,6 +14,16 @@ model_stage <- function(model_parameters) {
   model_parameters[[1]] <- NULL
 
   function(modelenv) {
+    # TODO: (RK) Move this out of syberia package!!!
+    webbank_variables <- readLines(file.path(syberia_root(), 'etc',
+      'webbank', 'disallowed_variables'), warn = FALSE)
+    if (any(vapply(badv <- tolower(webbank_variables), is.element,
+                   logical(1), set = allv <- tolower(colnames(modelenv$data))))) {
+      stop("You are using disallowed webbank variables: \n",
+           testthat:::colourise(paste(intersect(badv, allv), collapse = "\n"), 'red'),
+           call. = FALSE)
+    }
+
     # Track variable summaries
     summaries <- modelenv$import_stage$variable_summaries
     summaries <- lapply(summaries,
