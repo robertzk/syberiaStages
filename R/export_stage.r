@@ -14,7 +14,9 @@ export_stage <- function(export_options) {
 #'
 #' @param export_options list. Nested list, one adapter per list entry.
 #'   These adapter parametrizations will get converted to legitimate
-#'   IO adapters. (See the "adapter" reference class.)
+#'   IO adapters. (See the "adapter" reference class.)  The object to
+#'   be exported is denoted by a prefix: e.g. object.adapter.  If the
+#'   prefix is omitted then the tundra container will be exported.
 build_export_stagerunner <- function(export_options) {
   stages <- lapply(seq_along(export_options), function(index) {
     
@@ -22,7 +24,7 @@ build_export_stagerunner <- function(export_options) {
     
     # two-letter prefix on adapter name indicates object to be exported
     # (no prefix indicates that the tundra container should be exported)
-    key <- rev(strsplit(export_key, '\\.')[[1]])
+    key <- rev(strsplit(export_key, '.', fixed=TRUE)[[1]])
     adapter_name <- key[1]
     if (length(key)==1) {
       export_object_type <- "tundra_container"
