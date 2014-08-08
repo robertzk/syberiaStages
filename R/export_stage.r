@@ -17,18 +17,43 @@ export_stage <- function(export_options) {
 #'   IO adapters. (See the "adapter" reference class.)
 build_export_stagerunner <- function(export_options) {
   stages <- lapply(seq_along(export_options), function(index) {
-    adapter <- names(export_options)[index] %||% default_adapter()
+    
+    export_key <- names(export_options)[index]
+    
+    # two-letter prefix on adapter name indicates object to be exported
+    # (no prefix indicates that the tundra container should be exported)
+    key <- rev(strsplit(export_key, '\\.')[[1]])
+    adapter_name <- key[1]
+    if (length(key)==1) {
+      export_object_type <- "tundra_container"
+    } else if (key[2]=="ac") {
+      export_object_type <- "avant_container"
+    } else {
+      stop(paste0("No export object associated with adapter prefix \"", key[2], "\""))
+    }
+    
+    # fetch the adapter
+    adapter <- adapter_name %||% default_adapter()
     adapter <- fetch_adapter(adapter)
     opts <- export_options[[index]]
 
+    # return a function for the stagerunner
     function(modelenv) {
+      
       attempt <- suppressWarnings(suppressMessages( # TODO: (RK) Announce errors
-        tryCatch(adapter$write(modelenv$model_stage$model, opts),
-                 error = function(e) e)))
+        if (export_object_type=="tundra_container") {
+          tryCatch(adapter$write(modelenv$model_stage$model, opts),
+                   error = function(e) e)
+        } else if (export_object_type=="avant_container") {
+          # Fill this in
+        }
+      ))
+      
       if (is(attempt, 'try-error')) {
         warning("Failed to export to ", sQuote(adapter$.keyword), " due to: ",
                 attempt, call. = FALSE)
       }
+      
     }
   })
   names(stages) <- vapply(stages, function(stage)
