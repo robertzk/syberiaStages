@@ -47,7 +47,40 @@ build_export_stagerunner <- function(export_options) {
           tryCatch(adapter$write(modelenv$model_stage$model, opts),
                    error = function(e) e)
         } else if (export_object_type=="avant_container") {
-          # Fill this in
+          
+          # process options
+          if (!is.list(opts)) stop("Options for exporting avantContainer must be passed as list")
+          if (! "path" %in% names(opts)) stop("Must provide path with avantContainer export options")
+          if (!( "train_rows" %in% names(opts) || "trainpct" %in% names(opts) ))
+            stop("Must provide either train_rows or trainpct with avantContainer export options")
+          version <- opts$version %||% ''
+          reference_version <- opts$reference_version %||% 'default/en-US/2.1.3'
+          
+          # retrieve data
+          raw_data <- stagerunner:::treeSkeleton(
+            active_runner()$stages$data)$first_leaf()$object$cached_env$data
+          if (!is.null(opts$train_rows)) {
+            train_data <- raw_data[train_rows, ]
+            test_data <- raw_data[-train_rows, ]
+          } else {
+            train_data <- raw_data[1:(opts$trainpct * nrow(raw_data)), ]
+            test_data <- raw_data[-c(1:(opts$trainpct * nrow(raw_data))), ]
+          }
+          munged_train_data <- 
+            stagerunner:::treeSkeleton(active_runner()$stages$model)$object$cached_env$data
+          
+          # create the avant container
+          ac <- avant::avantContainer$new(modelenv$model_stage$model, 
+                                          version, 
+                                          train_data,
+                                          test_data, 
+                                          munged_train_data,
+                                          reference_version)
+          
+          # write it to disk
+          tryCatch(adapter$write(ac, opts$path),
+                   error = function(e) e)
+          
         }
       ))
       
