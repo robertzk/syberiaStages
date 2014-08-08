@@ -53,6 +53,7 @@ build_export_stagerunner <- function(export_options) {
           if (! "path" %in% names(opts)) stop("Must provide path with avantContainer export options")
           if (!( "train_rows" %in% names(opts) || "trainpct" %in% names(opts) ))
             stop("Must provide either train_rows or trainpct with avantContainer export options")
+          dep_var_name = opts$dep_var_name %||% 'dep_var'
           version <- opts$version %||% ''
           reference_version <- opts$reference_version %||% 'default/en-US/2.1.3'
           
@@ -72,6 +73,7 @@ build_export_stagerunner <- function(export_options) {
           # create the avant container
           ac <- avant::avantContainer$new(modelenv$model_stage$model, 
                                           version, 
+                                          dep_var_name,
                                           train_data,
                                           test_data, 
                                           munged_train_data,
