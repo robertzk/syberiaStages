@@ -50,7 +50,9 @@ evaluation_stage <- function(evaluation_parameters) {
     random_sample = evaluation_parameters$random_sample %||% FALSE,
     seed =  evaluation_parameters$seed, 
     times =  evaluation_parameters$times %||% 1,
-    validation_rows = evaluation_parameters$validation_rows %||% NULL
+    validation_rows = evaluation_parameters$validation_rows %||% NULL,
+    primary_key = evaluation_parameters$primary_key %||% NULL,
+    validation_ids = evaluation_parameters$validation_ids %||% NULL
   )
 
   # This list of functions will be incorporated into the full model stageRunner
@@ -95,6 +97,8 @@ evaluation_stage_generate_options <- function(params) {
     
     if (!is.null(modelenv$evaluation_stage$validation_rows)) {
       validation_rows <- modelenv$evaluation_stage$validation_rows
+    } else if {
+      validation_rows <- which(raw_data[[primary_key]] %in% validation_ids)
     } else if (modelenv$evaluation_stage$random_sample) {
       stopifnot('seed' %in% names(modelenv$evaluation_stage) &&
                   is.numeric(modelenv$evaluation_stage$seed))
