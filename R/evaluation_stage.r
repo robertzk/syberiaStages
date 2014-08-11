@@ -98,7 +98,7 @@ evaluation_stage_generate_options <- function(params) {
     if (!is.null(modelenv$evaluation_stage$validation_rows)) {
       validation_rows <- modelenv$evaluation_stage$validation_rows
     } else if (!is.null(primary_key)) {
-      validation_rows <- which(raw_data[[primary_key]] %in% validation_ids)
+      validation_rows <- which(raw_data[[modelenv$evaluation_stage$primary_key]] %in% modelenv$evaluation_stage$validation_ids)
     } else if (modelenv$evaluation_stage$random_sample) {
       stopifnot('seed' %in% names(modelenv$evaluation_stage) &&
                   is.numeric(modelenv$evaluation_stage$seed))
