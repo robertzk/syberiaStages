@@ -35,7 +35,7 @@ build_import_stagerunner <- function(import_options) {
   }))
   if (length(stages) > 0)
     names(stages) <- vapply(names(stages), function(stage_name)
-      paste0("Import from ", stage_name), character(1))
+      paste0("Import from ", gsub('/','.',as.character(stage_name),fixed=TRUE)), character(1))
 
   # Always verify the data was loaded correctly in a separate stageRunner step.
 
