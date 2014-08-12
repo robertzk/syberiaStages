@@ -87,13 +87,13 @@ evaluation_stage_generate_options <- function(params) {
     # data stage. This way, it will be import-method-agnostic, and we will not
     # have to worry whether our data came from CSV, S3, etc. We also assume the
     # stageRunner we are attached to is in `active_runner()`.
-
+    browser()
     raw_data <- stagerunner:::treeSkeleton(
       active_runner()$stages$data)$first_leaf()$object$cached_env$data
 
     # TODO: (TL) need to manually run munge procedure to filter out bad loans/loans with too many missing values
     if(!is.null(modelenv$data_stage$validation_primary_key)){
-      validation_rows <- raw_data[raw_data$loan_id %in% modelenv$data_stage$validation_primary_key, ]
+      validation_rows <- raw_data$loan_id %in% modelenv$data_stage$validation_primary_key
     } else if (!is.null(modelenv$evaluation_stage$validation_rows)) {
       validation_rows <- modelenv$evaluation_stage$validation_rows
     } else if (modelenv$evaluation_stage$random_sample) {
