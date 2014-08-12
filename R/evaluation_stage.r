@@ -90,14 +90,15 @@ evaluation_stage_generate_options <- function(params) {
     raw_data <- stagerunner:::treeSkeleton(
       active_runner()$stages$data)$first_leaf()$object$cached_env$data
 
-    # TODO: (TL) need to manually run munge procedure to filter out bad loans/loans with too many missing values
-    if(!is.null(modelenv$data_stage$validation_primary_key)){
-      validation_rows <- raw_data[raw_data$loan_id %in% modelenv$evaluation_stage$validation_primary_key, ]
-    } 
-      else if (!is.null(modelenv$evaluation_stage$validation_rows)) {
+    # TODO: (TL) need to manually run munge procedure to filter out bad records
+    # and/or record swith too many missing values.
+    if (!is.null(modelenv$data_stage$validation_primary_key)) {
+      validation_rows <- raw_data[
+        is.element(raw_data[[params$id_column]],
+                   modelenv$evaluation_stage$validation_primary_key), ]
+    } else if (!is.null(modelenv$evaluation_stage$validation_rows)) {
       validation_rows <- modelenv$evaluation_stage$validation_rows
-    } 
-      else if (modelenv$evaluation_stage$random_sample) {
+    } else if (modelenv$evaluation_stage$random_sample) {
       stopifnot('seed' %in% names(modelenv$evaluation_stage) &&
                   is.numeric(modelenv$evaluation_stage$seed))
       Ramd::packages('caret') # Make sure caret is installed and loaded
