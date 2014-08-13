@@ -61,8 +61,8 @@ build_export_stagerunner <- function(export_options) {
           raw_data <- stagerunner:::treeSkeleton(
             active_runner()$stages$data)$first_leaf()$object$cached_env$data
           if (!is.null(opts$train_rows)) {
-            train_data <- raw_data[train_rows, ]
-            test_data <- raw_data[-train_rows, ]
+            train_data <- raw_data[opts$train_rows, ]
+            test_data <- raw_data[-opts$train_rows, ]
           } else {
             train_data <- raw_data[1:(opts$trainpct * nrow(raw_data)), ]
             test_data <- raw_data[-c(1:(opts$trainpct * nrow(raw_data))), ]
