@@ -11,6 +11,26 @@ data_stage <- function(modelenv, munge_procedure) {
   removed_steps <- vapply(munge_procedure, function(x) is(x, 'trigger'), logical(1))
   # TODO: sameAs/importFrom and butWith/except triggers
   # TODO: save trigger
+  if ('monitor' %in% names(munge_procedure)) {
+    if (munge_procedure$monitor) { # only monitor = TRUE will enable monitoring
+
+      # define the munge monitor
+      munge_procedure$monitor <- NULL
+      monitor <- function(df) {
+        cat("  Dimensions: ", dim(df)[1], 'x', dim(df)[2], '\n', sep='')
+        TRUE # must return TRUE!
+      }  
+  
+      # interleave mungesteps with monitor function
+      n <- length(munge_procedure)
+      i2 <- 2*(1:n)
+      i1 <- i2 - 1 
+      tmp <- list() 
+      tmp[i1] <- munge_procedure
+      for (i in i2) tmp[[i]] <- monitor 
+      munge_procedure <- tmp
+    }
+  }
 
   stagerunner <- munge(modelenv, munge_procedure,
     stagerunner = list(remember = TRUE),
