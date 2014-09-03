@@ -17,7 +17,7 @@ data_stage <- function(modelenv, munge_procedure) {
       # define the munge monitor
       munge_procedure$monitor <- NULL
       monitor <- function(df) {
-        cat("  Dimensions: ", dim(df)[1], 'x', dim(df)[2], '\n', sep='')
+        cat("\033[0;33m\t\tDimensions: ", dim(df)[1], ' x ', dim(df)[2], '\033[0m\n', sep='')
         TRUE # must return TRUE!
       }  
   
@@ -30,7 +30,7 @@ data_stage <- function(modelenv, munge_procedure) {
       names(tmp)[i1] <- names(munge_procedure)
       for (i in i2) {
         tmp[[i]] <- monitor 
-        names(tmp)[i] <- "monitor"
+        names(tmp)[i] <- "Monitor"
       }
       munge_procedure <- tmp
     }
