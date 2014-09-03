@@ -27,7 +27,11 @@ data_stage <- function(modelenv, munge_procedure) {
       i1 <- i2 - 1 
       tmp <- list() 
       tmp[i1] <- munge_procedure
-      for (i in i2) tmp[[i]] <- monitor 
+      names(tmp)[i1] <- names(munge_procedure)
+      for (i in i2) {
+        tmp[[i]] <- monitor 
+        names(tmp)[i] <- "monitor"
+      }
       munge_procedure <- tmp
     }
   }
