@@ -12,14 +12,23 @@ data_stage <- function(modelenv, munge_procedure) {
   # TODO: sameAs/importFrom and butWith/except triggers
   # TODO: save trigger
   if ('monitor' %in% names(munge_procedure)) {
-    if (munge_procedure$monitor) { # only monitor = TRUE will enable monitoring
+    if (is.function(munge_procedure$monitor) || munge_procedure$monitor==TRUE) { # only monitor = TRUE will enable monitoring
 
       # define the munge monitor
+      if (is.function(munge_procedure$monitor)) {
+        tmp_fn <- munge_procedure$monitor
+        monitor <- function(df) {
+          cat('\033[0;33m')
+          tmp_fn(df) 
+          cat('\033[0m')
+        }
+      } else {
+        monitor <- function(df) {
+          cat("\033[0;33m\t\tDimensions: ", dim(df)[1], ' x ', dim(df)[2], '\033[0m\n', sep='')
+          TRUE
+        }  
+      }
       munge_procedure$monitor <- NULL
-      monitor <- function(df) {
-        cat("\033[0;33m\t\tDimensions: ", dim(df)[1], ' x ', dim(df)[2], '\033[0m\n', sep='')
-        TRUE # must return TRUE!
-      }  
   
       # interleave mungesteps with monitor function
       n <- length(munge_procedure)
