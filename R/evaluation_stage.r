@@ -165,6 +165,7 @@ evaluation_stage_auc <- function(modelenv) {
 #'
 #' @param modelenv environment. The current modeling environment.
 evaluation_stage_confusion_matrix <- function(modelenv) {  
+  browser()
   confusion_matrix_arguments <- 
     list(modelenv$evaluation_stage$prediction_data,
          modelenv$evaluation_stage$cutoff,
