@@ -21,6 +21,7 @@ data_stage <- function(modelenv, munge_procedure) {
           cat('\033[0;33m')
           tmp_fn(df) 
           cat('\033[0m')
+          TRUE
         }
       } else {
         monitor <- function(df) {
