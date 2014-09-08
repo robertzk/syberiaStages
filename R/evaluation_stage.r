@@ -92,7 +92,8 @@ evaluation_stage_generate_options <- function(params) {
 
     # TODO: (TL) need to manually run munge procedure to filter out bad loans/loans with too many missing values
     if(!is.null(modelenv$data_stage$validation_primary_key)){
-      validation_rows <- raw_data$loan_id %in% modelenv$data_stage$validation_primary_key
+
+      validation_rows <- raw_data[[params$id_column]] %in% modelenv$data_stage$validation_primary_key
     } else if (!is.null(modelenv$evaluation_stage$validation_rows)) {
       validation_rows <- modelenv$evaluation_stage$validation_rows
     } else if (modelenv$evaluation_stage$random_sample) {
@@ -135,7 +136,8 @@ evaluation_stage_generate_options <- function(params) {
 #' of the \code{evaluation_stage} list. This will contain:
 #' 
 #' \itemize{
-#'    \item roc. The RoC of the validation data.
+#'    \item auc. The auc of the ROC of the validation data.
+#'    \item ci_auc. The 95% confidence interval for the auc of the ROC of the validation data.
 #'    \item accuracy. The accuracy of the validation data.
 #'    \item sensitivity. The sensitivity of the validation data.
 #'    \item specificity. The specificity of the validation data.
@@ -144,13 +146,15 @@ evaluation_stage_generate_options <- function(params) {
 #' @param modelenv environment. The current modeling environment.
 # TODO: (RK) Make the above items more descriptive.
 evaluation_stage_auc <- function(modelenv) {
-  Ramd::packages('AUC') 
+  Ramd::packages('AUC pROC') 
+  
   modelenv$evaluation_stage$auc <- with(modelenv$evaluation_stage$prediction_data, {
     list(
-      roc = AUC::auc(roc(score, factor(dep_var))),
-      accuracy = AUC::auc(accuracy(score, factor(dep_var))),
-      sensitivity = AUC::auc(sensitivity(score, factor(dep_var))),
-      specificity = AUC::auc(specificity(score, factor(dep_var)))
+      auc = AUC::auc(AUC::roc(score, factor(dep_var))),
+      ci_auc = pROC::ci(factor(dep_var), score, of = "auc"),
+      accuracy = AUC::auc(AUC::accuracy(score, factor(dep_var))),
+      sensitivity = AUC::auc(AUC::sensitivity(score, factor(dep_var))),
+      specificity = AUC::auc(AUC::specificity(score, factor(dep_var)))
   )})
   print(modelenv$evaluation_stage$auc)
 }
