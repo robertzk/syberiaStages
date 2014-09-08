@@ -92,6 +92,8 @@ evaluation_stage_generate_options <- function(params) {
     #                   function(x) {p <- environment(x)$piece; p$bit$enforce_train <- FALSE;
     #                                p$bit$trained <- FALSE; p}[1:2]))
     
+    active_runner <- function() get('m', envir = globalenv())
+    
     raw_data <- stagerunner:::treeSkeleton(
       active_runner()$stages$data)$first_leaf()$object$cached_env$data
 
