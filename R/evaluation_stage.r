@@ -87,6 +87,11 @@ evaluation_stage_generate_options <- function(params) {
     # data stage. This way, it will be import-method-agnostic, and we will not
     # have to worry whether our data came from CSV, S3, etc. We also assume the
     # stageRunner we are attached to is in `active_runner()`.
+    
+    #post_munge_data <- munge(raw_data, lapply(active_runner()$stages$data, 
+    #                   function(x) {p <- environment(x)$piece; p$bit$enforce_train <- FALSE;
+    #                                p$bit$trained <- FALSE; p}[1:2]))
+    
     raw_data <- stagerunner:::treeSkeleton(
       active_runner()$stages$data)$first_leaf()$object$cached_env$data
 
