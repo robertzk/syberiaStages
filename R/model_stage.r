@@ -15,6 +15,11 @@ model_stage <- function(model_parameters) {
 
   webbank_variables <- readLines(file.path(syberia_root(), 'etc',
     'webbank', 'disallowed_variables'), warn = FALSE)
+  
+  webbank_variables_TU <- readLines(file.path(syberia_root(), 'etc',
+    'webbank', 'disallowed_TU_variables'), warn = FALSE)
+
+  webbank_variables <- union(webbank_variables, webbank_variables_TU)
 
   function(modelenv) {
     # TODO: (RK) Move this out of syberia package!!!
@@ -24,6 +29,7 @@ model_stage <- function(model_parameters) {
            testthat:::colourise(paste(intersect(badv, allv), collapse = "\n"), 'red'),
            call. = FALSE)
     }
+
 
     # Track variable summaries
     summaries <- modelenv$import_stage$variable_summaries

@@ -92,6 +92,7 @@ evaluation_stage_generate_options <- function(params) {
 
     # TODO: (TL) need to manually run munge procedure to filter out bad loans/loans with too many missing values
     if(!is.null(modelenv$data_stage$validation_primary_key)){
+
       validation_rows <- raw_data[[params$id_column]] %in% modelenv$data_stage$validation_primary_key
     } else if (!is.null(modelenv$evaluation_stage$validation_rows)) {
       validation_rows <- modelenv$evaluation_stage$validation_rows
