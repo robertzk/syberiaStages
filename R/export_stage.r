@@ -22,13 +22,7 @@ build_export_stagerunner <- function(export_options) {
     opts <- export_options[[index]]
 
     function(modelenv) {
-      attempt <- suppressWarnings(suppressMessages( # TODO: (RK) Announce errors
-        tryCatch(adapter$write(modelenv$model_stage$model, opts),
-                 error = function(e) e)))
-      if (is(attempt, 'try-error')) {
-        warning("Failed to export to ", sQuote(adapter$.keyword), " due to: ",
-                attempt, call. = FALSE)
-      }
+      attempt <- adapter$write(modelenv$model_stage$model, opts)
     }
   })
   names(stages) <- vapply(stages, function(stage)
