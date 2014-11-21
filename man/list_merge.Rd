@@ -20,8 +20,8 @@ For example, \code{list_merge(list(a = 1, b = 2), list(b = 3, c = 4))}
 will be \code{list(a = 1, b = 3, c = 4)}.
 }
 \examples{
-stopifnot(identical(list_merge(list(a = 1, b = 2), list(b = 3, c = 4)),
+stopifnot(identical(syberiaStages:::list_merge(list(a = 1, b = 2), list(b = 3, c = 4)),
                     list(a = 1, b = 3, c = 4)))
-stopifnot(identical(list_merge(NULL, list(a = 1)), list(a = 1)))
+stopifnot(identical(syberiaStages:::list_merge(NULL, list(a = 1)), list(a = 1)))
 }
 

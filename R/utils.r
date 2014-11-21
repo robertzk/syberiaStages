@@ -9,9 +9,9 @@
 #' @param list2 list
 #' @return the merged list.
 #' @examples
-#' stopifnot(identical(list_merge(list(a = 1, b = 2), list(b = 3, c = 4)),
+#' stopifnot(identical(syberiaStages:::list_merge(list(a = 1, b = 2), list(b = 3, c = 4)),
 #'                     list(a = 1, b = 3, c = 4)))
-#' stopifnot(identical(list_merge(NULL, list(a = 1)), list(a = 1)))
+#' stopifnot(identical(syberiaStages:::list_merge(NULL, list(a = 1)), list(a = 1)))
 # TODO: (RK) This is a duplicate of the function in mungebits -- is there
 # any way to pull them out into one place? Maybe Ramd?
 list_merge <- function(list1, list2) {
