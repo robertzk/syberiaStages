@@ -211,6 +211,22 @@ construct_s3_adapter <- function() {
   write_function <- function(object, opts) {
     load_s3mpi_package()
 
+    if (is(obj, 'tundraContainer') && is(obj$output$model, 'xgb.Booster')) {
+      file <- tempfile()
+      on.exit(unlink(file))
+      xgboost::xgb.save(obj$output$model, file)
+      obj$container$output$model <- NULL
+      obj <- structure(class = 'special_serialized_object', list(
+        deserialize = function(x) {
+          file <- tempfile()
+          on.exit(unlink(file))
+          writeLines(x$xgb.bin, file)
+          x$container$model$output <- xgboost::xgb.load(x$xgb.bin)
+          x$container
+        }, object = list(container = obj, xgb.bin = readLines(file))
+      ))
+    }
+
     # If the user provided an s3 path, like "s3://somebucket/some/path/", 
     # pass it along to the s3read function.
     args <- list(obj = object, name = opts$resource)
