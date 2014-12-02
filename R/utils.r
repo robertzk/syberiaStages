@@ -57,4 +57,3 @@ parse_custom_functions <- function(functions, provided_env, type,
   }
   provided_fns
 }
-
