@@ -196,6 +196,7 @@ construct_s3_adapter <- function() {
       stop("You must install and set up the s3mpi package from ",
            "https://github.com/robertzk/s3mpi", call. = FALSE)
     require(s3mpi)
+		require(xgboost)
   }
 
   read_function <- function(opts) {
@@ -211,6 +212,32 @@ construct_s3_adapter <- function() {
   write_function <- function(object, opts) {
     load_s3mpi_package()
 
+		if (is(object, 'tundraContainer') &&
+		  # Hack for model object requiring customized
+			#	serializer, e.g., xgb.Booster
+		  is(object$output$model, 'xgb.Booster')) {
+		    file_save <- tempfile()
+				on.exit(unlink(file_save))
+		    xgboost::xgb.save(object$output$model, file_save)
+				stopifnot(!is.na(as.integer(file.info(file_save)$size)))
+		    object$output$model <- NULL
+				con <- file(file_save, 'rb')
+				on.exit(close(con), add = TRUE)
+		    object <- structure(class = 'special_serialized_object', list(
+		      deserialize = function(x) {
+		        file_load <- tempfile()
+		        on.exit(unlink(file_load))
+						con <- file(file_load, 'wb')
+						on.exit(close(con), add = TRUE)
+		        writeBin(x$xgb.bin, con, useBytes = TRUE)
+						close(con)
+		        x$container$output$model <- xgboost::xgb.load(file_load)
+		        x$container
+		      }, object = list(container = object,
+						 							 xgb.bin = readBin(con, raw(), n = file.info(file_save)$size))
+		    ))
+				close(con)
+		}
     # If the user provided an s3 path, like "s3://somebucket/some/path/", 
     # pass it along to the s3read function.
     args <- list(obj = object, name = opts$resource)
