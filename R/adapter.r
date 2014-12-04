@@ -196,7 +196,6 @@ construct_s3_adapter <- function() {
       stop("You must install and set up the s3mpi package from ",
            "https://github.com/robertzk/s3mpi", call. = FALSE)
     require(s3mpi)
-		require(xgboost)
   }
 
   read_function <- function(opts) {
