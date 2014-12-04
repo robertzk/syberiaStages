@@ -58,3 +58,32 @@ parse_custom_functions <- function(functions, provided_env, type,
   provided_fns
 }
 
+#' Helper function to serialize a tundraContainer of xgboost model object
+#'
+serialize_xgb_object <- function(object) {
+	file_save <- tempfile()
+  on.exit(unlink(file_save))
+  xgboost::xgb.save(object$output$model, file_save)
+  stopifnot(!is.na(as.integer(file.info(file_save)$size)))
+  object$output$model <- NULL
+  con <- file(file_save, 'rb')
+  on.exit(close(con), add = TRUE)
+  object <- structure(
+	            class = 'special_serialized_object', 
+							list(
+							  deserialize = function(x) {
+                  file_load <- tempfile()
+                  on.exit(unlink(file_load))
+                  con <- file(file_load, 'wb')
+                  on.exit(close(con), add = TRUE)
+                  writeBin(x$xgb.bin, con, useBytes = TRUE)
+                  x$container$output$model <- xgboost::xgb.load(file_load)
+                  invisible(x$container)
+                }, 
+								object = list(container = object, 
+							                xgb.bin = readBin(con, raw(), 
+															                  n = file.info(file_save)$size))
+							)
+					  )
+	invisible(object)
+}
