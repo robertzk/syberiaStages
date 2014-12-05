@@ -214,8 +214,10 @@ construct_s3_adapter <- function() {
     # Hack for model object requiring customized
     # serializer, e.g., xgb.Booster
     if (is(object, 'tundraContainer') &&
-        is(object$output$model, 'xgb.Booster'))
+        is(object$output$model, 'xgb.Booster')) {
 			object <- serialize_xgb_object(object)
+    }
+
     # If the user provided an s3 path, like "s3://somebucket/some/path/", 
     # pass it along to the s3read function.
     args <- list(obj = object, name = opts$resource)

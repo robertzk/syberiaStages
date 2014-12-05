@@ -58,8 +58,8 @@ parse_custom_functions <- function(functions, provided_env, type,
   provided_fns
 }
 
-#' Helper function to serialize a tundraContainer of xgboost model object
-#'
+# Helper function to serialize a tundraContainer of xgboost model object
+#
 serialize_xgb_object <- function(object) {
 	file_save <- tempfile()
   on.exit(unlink(file_save))
