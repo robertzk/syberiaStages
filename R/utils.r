@@ -63,7 +63,7 @@ parse_custom_functions <- function(functions, provided_env, type,
 # TODO: (RK) Refactor this function out of the package.
 serialize_xgb_object <- function(object) {
 	file_save <- tempfile()
-  on.exit(unlink(file_save))
+  on.exit(unlink(file_save), add = TRUE)
   xgboost::xgb.save(object$output$model, file_save)
   stopifnot(!is.na(as.integer(file.info(file_save)$size)))
   object$output$model <- NULL
@@ -74,10 +74,14 @@ serialize_xgb_object <- function(object) {
     list(
       deserialize = function(x) {
         file_load <- tempfile()
-        on.exit(unlink(file_load))
+        on.exit(unlink(file_load), add = TRUE)
         con <- file(file_load, 'wb')
-        on.exit(close(con), add = TRUE)
+        on.exit(tryCatch(if (isOpen(con)) close(con), 
+          error = function(.) message("Connection is already closed")), 
+          add = TRUE)
         writeBin(x$xgb.bin, con, useBytes = TRUE)
+        # Do NOT remove the following line of code!!
+        # Close out the connection before reading the binary.
         close(con)
         x$container$output$model <- xgboost::xgb.load(file_load)
         invisible(x$container)
@@ -89,4 +93,3 @@ serialize_xgb_object <- function(object) {
     )
   ))
 }
-
