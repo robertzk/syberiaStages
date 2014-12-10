@@ -78,6 +78,7 @@ serialize_xgb_object <- function(object) {
         con <- file(file_load, 'wb')
         on.exit(close(con), add = TRUE)
         writeBin(x$xgb.bin, con, useBytes = TRUE)
+        close(con)
         x$container$output$model <- xgboost::xgb.load(file_load)
         invisible(x$container)
       }, 
