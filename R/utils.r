@@ -58,9 +58,9 @@ parse_custom_functions <- function(functions, provided_env, type,
   provided_fns
 }
 
-# Helper function to serialize a tundraContainer of xgboost model object
-#
-# TODO: (RK) Refactor this function out of the package.
+#' Helper function to serialize a tundraContainer of xgboost model object
+#' 
+#' TODO: (RK) Refactor this function out of the package.
 serialize_xgb_object <- function(object) {
 	file_save <- tempfile()
   on.exit(unlink(file_save), add = TRUE)
@@ -92,4 +92,25 @@ serialize_xgb_object <- function(object) {
       )
     )
   ))
+}
+
+#' Helper function to calculate the internal rate of return (IRR) 
+#' of a loan customer based on a projected survival curve or real.
+#'  
+#' @param projected logical. Whether or not the object is based on 
+#'  projection or fact.
+#' @param object data.frame. Customer data of a client.
+#' @return the calculated projected or real IRR.
+calc_irr <- function(projected, object) {
+  if (isTRUE(projected)) {
+    # calc is based on projection and assumign a flat yield curve
+    NULL    
+  } else {
+    # calc is based on fact and assuming a flat yield curve
+    if (object$dep_var == 0 && object$dep_val < 1) return(NULL)
+    if (identical(0, n_payments <- floor(object$dep_val * object$term))) return(-Inf)
+    fcn2optimise <- function(r) 
+      abs(object$funded_amnt - object$installment * 12 * (1 - 1 / (1 + r / 12) ^ n_payments) / r)
+    optimise(fcn2optimise, c(-1, 1))$minimum
+  }
 }
