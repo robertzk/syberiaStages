@@ -92,6 +92,7 @@ evaluation_stage_generate_options <- function(params) {
     raw_data <- stagerunner:::treeSkeleton(
       active_runner()$stages$data)$first_leaf()$object$cached_env$data
 
+    print("Before generating validation data")
     # TODO: (TL) need to manually run munge procedure to filter out bad loans/loans with too many missing values
     if(!is.null(modelenv$data_stage$validation_primary_key)){
 
@@ -109,6 +110,7 @@ evaluation_stage_generate_options <- function(params) {
       validation_rows <- setdiff(seq(1, nrow(raw_data)), training_rows)
     } else validation_rows <- seq(modelenv$evaluation_stage$train_percent * nrow(raw_data) + 1, nrow(raw_data))
     
+    print("Before calling prediction on validation data")
     # The validation data is the last (1 - train_percent) of the dataframe.
     validation_data <- raw_data[validation_rows, ]
     score <- modelenv$model_stage$model$predict(validation_data)
@@ -121,7 +123,7 @@ evaluation_stage_generate_options <- function(params) {
                  benchmark = validation_data[[modelenv$evaluation_stage$id_benchmark]],
                  installment = validation_data[[modelenv$evaluation_stage$id_installment]],
                  funded_amnt = validation_data[[modelenv$evaluation_stage$id_funded_amnt]],
-                 term = validation_data[[modelenv$evaluation_stage$id_term]]
+                 term = validation_data[[modelenv$evaluation_stage$id_term]],
                  score = score)
     modelenv$evluation_stage$baseline_fcn <- 
       modelenv$model_stage$model$output$baseline_fcn
