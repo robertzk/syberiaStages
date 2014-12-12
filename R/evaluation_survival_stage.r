@@ -48,6 +48,9 @@ evaluation_stage <- function(evaluation_parameters) {
     dep_val = evaluation_parameters$dep_val %||% "dep_val",
     id_column = evaluation_parameters$id_column %||% "loan_id",
     id_benchmark = evaluation_parameters$id_benchmark %||% "sub_grade", 
+    id_installment = evaluation_parameters$id_installment %||% "installment",
+    id_funded_amnt = evaluation_parameters$id_funded_amnt %||% "funded_amnt",
+    id_term = evaluation_parameters$id_term %||% "term",
     random_sample = evaluation_parameters$random_sample %||% FALSE,
     seed =  evaluation_parameters$seed, 
     times =  evaluation_parameters$times %||% 1
@@ -115,15 +118,17 @@ evaluation_stage_generate_options <- function(params) {
     modelenv$evaluation_stage$prediction_data <-
       data.frame(dep_var = validation_data[[modelenv$evaluation_stage$dep_var]],
                  dep_val = validation_data[[modelenv$evaluation_stage$dep_val]],
+                 benchmark = validation_data[[modelenv$evaluation_stage$id_benchmark]],
+                 installment = validation_data[[modelenv$evaluation_stage$id_installment]],
+                 funded_amnt = validation_data[[modelenv$evaluation_stage$id_funded_amnt]],
+                 term = validation_data[[modelenv$evaluation_stage$id_term]]
                  score = score)
-    modelenv$evluation_stage$prediction_curve <- 
+    modelenv$evluation_stage$baseline_fcn <- 
       modelenv$model_stage$model$output$baseline_fcn
 
     if (!is.null(id_column <- modelenv$evaluation_stage$id_column))
       modelenv$evaluation_stage$prediction_data[[id_column]] <-
         validation_data[[id_column]]
-
-    dir.create(dirname(modelenv$evaluation_stage$output), FALSE, TRUE)
   }
 }
 
@@ -136,23 +141,21 @@ evaluation_stage_generate_options <- function(params) {
 #' (See the \code{output} option in \code{evaluation_stage}).
 #'
 #' @param modelenv environment. The current modeling environment.
-evaluation_stage_validation_plot <- function(modelenv){
-  ordered_scores <- modelenv$evaluation_stage$prediction_data[
-    order(modelenv$evaluation_stage$prediction_data$score), ]
-  xs <- (10*(0:9) + 9) / 100 # TODO: (RK) Make a parameter for this
-  ys <- sapply(xs, function(x) {
-    xrows <- seq((nrow(ordered_scores) * max(x - (xs[2] - xs[1]), 0) + 1),
-                 (nrow(ordered_scores) * x))
-    sum(ordered_scores[xrows, 'dep_var']) / length(xrows)
-  }) # TODO: (RK) Figure out if this can be done more cleanly with tapply.
-  
-  dir.create(dirname(modelenv$evaluation_stage$output), FALSE, TRUE)
-  png(filename = paste0(modelenv$evaluation_stage$output, '.png'))
-  plot(xs, ys, type = 'l', col = 'darkgreen',
-       main = 'IRR v.s. benchmark id buckets',
-       xlab = 'benchmark id bukets',
-       ylab = 'IRR',
-       frame.plot = TRUE, lwd = 3, cex = 2)
-  dev.off()
+evaluation_stage_validation_plot <- function(modelenv) {
+  for (i in 1:nrows(modelenv$evaluation_stage$prediction_data)) {
+    row <- modelenv$evaluation_stage$prediction_data[i, , drop = FALSE]
+    survival_probs <- modelenv$evaluation_stage$baseline_fcn[seq_len(row$term)]^exp(row$score)
+    irrs <- c(row$benchmark, calc_irr(TRUE, row, survival_probs), calc_irr(FALSE, row))
+    print(irrs)
+  }
+
+#  dir.create(dirname(modelenv$evaluation_stage$output), FALSE, TRUE)
+#  png(filename = paste0(modelenv$evaluation_stage$output, '.png'))
+#  plot(xs, ys, type = 'l', col = 'darkgreen',
+#       main = 'IRR v.s. benchmark id buckets',
+#       xlab = 'benchmark id bukets',
+#       ylab = 'IRR',
+#       frame.plot = TRUE, lwd = 3, cex = 2)
+#  dev.off()
   invisible(NULL)
 }
