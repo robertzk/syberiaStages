@@ -105,21 +105,21 @@ serialize_xgb_object <- function(object) {
 calc_irr <- function(projected, object, survival_probs) {
   if (isTRUE(projected)) {
     # calc is based on projection and assumign a flat yield curve
-    stopifnot(missing(survival_probs))
+    stopifnot(!missing(survival_probs))
     payments <- rep(object$installment, object$term) * survival_probs
     fcn2optimise <- function(r)
       abs(object$funded_amnt - sum(payments * sapply(seq_len(object$term), 
         function(x) 1 / (1 + r / 12) ^ x)))
-    tryCatch(optimise(fcn2optimise, c(-1, 1))$minimum,
+    tryCatch(optimise(fcn2optimise, c(-10, 10))$minimum,
              error = function(c) NULL,
              warning = function(c) NULL)
   } else {
     # calc is based on fact and assuming a flat yield curve
     if (object$dep_var == 0 && object$dep_val < 1) return(NULL)
-    if (identical(0, n_payments <- floor(object$dep_val * object$term))) return(-Inf)
+    if (identical(0, n_payments <- floor(object$dep_val * object$term))) return(-10)
     fcn2optimise <- function(r) 
       abs(object$funded_amnt - object$installment * 12 * (1 - 1 / (1 + r / 12) ^ n_payments) / r)
-    tryCatch(optimise(fcn2optimise, c(-1, 1))$minimum,
+    tryCatch(optimise(fcn2optimise, c(-10, 10))$minimum,
              error = function(c) NULL,
              warning = function(c) NULL)
   }

@@ -46,11 +46,13 @@ evaluation_stage <- function(evaluation_parameters) {
     validation_rows = evaluation_parameters$validation_rows %||% NULL,
     dep_var = evaluation_parameters$dep_var %||% 'dep_var',
     dep_val = evaluation_parameters$dep_val %||% "dep_val",
+    id_column_orig = evaluation_parameters$id_column_orig %||% "id",
     id_column = evaluation_parameters$id_column %||% "loan_id",
     id_benchmark = evaluation_parameters$id_benchmark %||% "sub_grade", 
     id_installment = evaluation_parameters$id_installment %||% "installment",
     id_funded_amnt = evaluation_parameters$id_funded_amnt %||% "funded_amnt",
     id_term = evaluation_parameters$id_term %||% "term",
+    id_split = evaluation_parameters$id_split %||% "oracle_split",
     random_sample = evaluation_parameters$random_sample %||% FALSE,
     seed =  evaluation_parameters$seed, 
     times =  evaluation_parameters$times %||% 1
@@ -92,7 +94,6 @@ evaluation_stage_generate_options <- function(params) {
     raw_data <- stagerunner:::treeSkeleton(
       active_runner()$stages$data)$first_leaf()$object$cached_env$data
 
-    print("Before generating validation data")
     # TODO: (TL) need to manually run munge procedure to filter out bad loans/loans with too many missing values
     if(!is.null(modelenv$data_stage$validation_primary_key)){
 
@@ -104,33 +105,36 @@ evaluation_stage_generate_options <- function(params) {
                   is.numeric(modelenv$evaluation_stage$seed))
       Ramd::packages('caret') # Make sure caret is installed and loaded
       set.seed(modelenv$evaluation_stage$seed) 
-      training_rows <- createDataPartition(factor(raw_data[, modelenv$evaluation_stage$dep_var]), 
+      training_rows <- createDataPartition(factor(raw_data[, modelenv$evaluation_stage$id_split]), 
                                            p = modelenv$evaluation_stage$train_percent, list = FALSE, times = modelenv$evaluation_stage$times)[,1]  
       
       validation_rows <- setdiff(seq(1, nrow(raw_data)), training_rows)
     } else validation_rows <- seq(modelenv$evaluation_stage$train_percent * nrow(raw_data) + 1, nrow(raw_data))
     
-    print("Before calling prediction on validation data")
     # The validation data is the last (1 - train_percent) of the dataframe.
+    # validation_data <- raw_data[sample(validation_rows, 500), ]
     validation_data <- raw_data[validation_rows, ]
+    munged_data <- modelenv$model_stage$model$munge(validation_data)
     score <- modelenv$model_stage$model$predict(validation_data)
     # TODO: (RK) Replace this with data partitions after they've been 
     # incorporated into syberia.
 
+    validation_data <- validation_data[
+      validation_data[[modelenv$evaluation_stage$id_column_orig]] %in% munged_data[[modelenv$evaluation_stage$id_column]], , drop = FALSE]
     modelenv$evaluation_stage$prediction_data <-
-      data.frame(dep_var = validation_data[[modelenv$evaluation_stage$dep_var]],
-                 dep_val = validation_data[[modelenv$evaluation_stage$dep_val]],
+      data.frame(dep_var = munged_data[[modelenv$evaluation_stage$dep_var]],
+                 dep_val = munged_data[[modelenv$evaluation_stage$dep_val]],
                  benchmark = validation_data[[modelenv$evaluation_stage$id_benchmark]],
                  installment = validation_data[[modelenv$evaluation_stage$id_installment]],
                  funded_amnt = validation_data[[modelenv$evaluation_stage$id_funded_amnt]],
-                 term = validation_data[[modelenv$evaluation_stage$id_term]],
+                 term = munged_data[[modelenv$evaluation_stage$id_term]],
                  score = score)
-    modelenv$evluation_stage$baseline_fcn <- 
+    modelenv$evaluation_stage$baseline_fcn <- 
       modelenv$model_stage$model$output$baseline_fcn
 
     if (!is.null(id_column <- modelenv$evaluation_stage$id_column))
       modelenv$evaluation_stage$prediction_data[[id_column]] <-
-        validation_data[[id_column]]
+        munged_data[[id_column]]
   }
 }
 
@@ -144,20 +148,51 @@ evaluation_stage_generate_options <- function(params) {
 #'
 #' @param modelenv environment. The current modeling environment.
 evaluation_stage_validation_plot <- function(modelenv) {
-  for (i in 1:nrows(modelenv$evaluation_stage$prediction_data)) {
+  ret <- data.frame(matrix(NA, nrow = nrow(modelenv$evaluation_stage$prediction_data), ncol = 3))
+  for (i in 1:nrow(modelenv$evaluation_stage$prediction_data)) {
     row <- modelenv$evaluation_stage$prediction_data[i, , drop = FALSE]
-    survival_probs <- modelenv$evaluation_stage$baseline_fcn[seq_len(row$term)]^exp(row$score)
-    irrs <- c(row$benchmark, calc_irr(TRUE, row, survival_probs), calc_irr(FALSE, row))
-    print(irrs)
-  }
+    survival_probs <- modelenv$evaluation_stage$baseline_fcn(seq_len(row$term) / row$term)^exp(row$score)
+    irrs <- c(calc_irr(TRUE, row, survival_probs), calc_irr(FALSE, row))
+    if (length(irrs) == 2) {
+      print(paste(rep("=",80), collapse=""))
+      print(row)
+      print(irrs)
+      ret[i, ] <- list(row$benchmark, irrs[2], irrs[1])
+  ret <- ret[!is.na(ret[[1]]), ]
+  colnames(ret) <- c("Benchmark", "IRR_realized", "IRR_projected")
 
-#  dir.create(dirname(modelenv$evaluation_stage$output), FALSE, TRUE)
-#  png(filename = paste0(modelenv$evaluation_stage$output, '.png'))
-#  plot(xs, ys, type = 'l', col = 'darkgreen',
-#       main = 'IRR v.s. benchmark id buckets',
-#       xlab = 'benchmark id bukets',
-#       ylab = 'IRR',
-#       frame.plot = TRUE, lwd = 3, cex = 2)
-#  dev.off()
+  dir.create(dirname(modelenv$evaluation_stage$output), FALSE, TRUE)
+  write.csv(ret, paste0(modelenv$evaluation_stage$output, '.csv'), row.names = FALSE)
+
+  #assign("ret", ret, envir = .GlobalEnv)
+
+  ret$Benchmark <- unname(sapply(ret$Benchmark, function(x) strsplit(x, "[0-9]*$")[[1]]))
+  buckets <- sort(unique(ret$Benchmark))
+  v_buckets <- sapply(buckets, function(x) sum(ret$Benchmark == x) / nrow(ret))
+  r_buckets <- sapply(buckets, function(x) median(ret$IRR_realized[ret$Benchmark == x]))
+  c_buckets <- unname(1 - quantile(1 - ret$IRR_projected, Reduce(sum, v_buckets, accumulate = TRUE)))
+  p_buckets <- sapply(seq_along(c_buckets), function(x) {
+    if (x == 1) median(ret$IRR_realized[ret$IRR_projected > c_buckets[x]])
+    else if (x == length(c_buckets)) median(ret$IRR_realized[ret$IRR_projected <= c_buckets[x-1]])
+    else median(ret$IRR_realized[ret$IRR_projected <= c_buckets[x-1] & 
+                                 ret$IRR_projected > c_buckets[x]]) 
+    })
+
+  png(filename = paste0(modelenv$evaluation_stage$output, '.png'))
+  plot(r_buckets, 
+       ylim = c(min(c(r_buckets, p_buckets)), max(c(r_buckets, p_buckets))), 
+       type = 'l', col = 'red',
+       xlab = 'Buckets',
+       ylab = 'Internal Rate of Return',
+       lwd = 3, cex = 2)
+  lines(p_buckets, type = 'l', col = 'green',
+        lwd = 3, cex = 2)
+  legend(4, 0, # places a legend at the appropriate place 
+         c("Lending Club Grade", "Survival Model Tier"), # puts text in the legend 
+         lty=c(1,1), # gives the legend appropriate symbols (lines)
+         lwd=c(2.5,2.5), 
+         col=c("red","green") # gives the legend lines the correct color and width
+        )
+  dev.off()
   invisible(NULL)
 }
