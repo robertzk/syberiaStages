@@ -158,6 +158,8 @@ evaluation_stage_validation_plot <- function(modelenv) {
       print(row)
       print(irrs)
       ret[i, ] <- list(row$benchmark, irrs[2], irrs[1])
+    }
+  }
   ret <- ret[!is.na(ret[[1]]), ]
   colnames(ret) <- c("Benchmark", "IRR_realized", "IRR_projected")
 

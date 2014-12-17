@@ -101,7 +101,7 @@ serialize_xgb_object <- function(object) {
 #'  projection or fact.
 #' @param object data.frame. Customer data of a client with added 
 #'  precomputed fields.
-#' @return the calculated projected or real IRR.
+#' @return the calculated expected or realized IRR.
 calc_irr <- function(projected, object, survival_probs) {
   if (isTRUE(projected)) {
     # calc is based on projection and assumign a flat yield curve
