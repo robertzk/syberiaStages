@@ -216,12 +216,12 @@ construct_s3_adapter <- function() {
     if (is(object, 'tundraContainer') &&
         is(object$output$model, 'xgb.Booster')) {
 			object <- serialize_xgb_object(object)
+      object$output$options$data <- NULL
+      object$output$options$label <- NULL
     }
 
     # If the user provided an s3 path, like "s3://somebucket/some/path/", 
     # pass it along to the s3read function.
-    object$output$options$data <- NULL
-    object$output$options$label <- NULL
     args <- list(obj = object, name = opts$resource)
     if (is.element('s3path', names(opts))) args$.path <- opts$s3path
     do.call(s3mpi::s3store, args)
@@ -291,15 +291,14 @@ construct_data_adapter <- function() {
     if (is(object, 'tundraContainer') &&
         is(object$output$model, 'xgb.Booster')) {
 			object <- serialize_xgb_object(object)
+      object <- list(data = object$output$options$data, 
+                     label = object$output$options$label)
     }
 
     # If the user provided an s3 path, like "s3://somebucket/some/path/", 
     # pass it along to the s3read function.
-    args <- list(obj = list(data = object$output$options$data, 
-                            label = object$output$options$label), 
-                 name = opts$resource)
-    if (is.element('s3path', names(opts))) args$.path <- paste(opts$s3path, "data", "label", 
-        sep = "_")
+    args <- list(obj = object, name = opts$resource)
+    if (is.element('s3path', names(opts))) args$.path <- opts$s3path
     do.call(s3mpi::s3store, args)
   }
 
