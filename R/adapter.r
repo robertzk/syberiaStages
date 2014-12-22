@@ -220,6 +220,8 @@ construct_s3_adapter <- function() {
 
     # If the user provided an s3 path, like "s3://somebucket/some/path/", 
     # pass it along to the s3read function.
+    object$output$options$data <- NULL
+    object$output$options$label <- NULL
     args <- list(obj = object, name = opts$resource)
     if (is.element('s3path', names(opts))) args$.path <- opts$s3path
     do.call(s3mpi::s3store, args)
@@ -256,6 +258,64 @@ construct_R_adapter <- function() {
           default_options = list(env = globalenv()), keyword = 'R')
 }
 
+#' Construct an Amazon Web Services S3 data adapter.
+#'
+#' This requires that the user has set up the s3mpi package to
+#' work correctly (for example, the s3mpi.path option should be set).
+#' (Note that this adapter is not related to R's S3 classes).
+#'
+#' @return an \code{adapter} object which reads and writes data to Amazon's S3.
+construct_data_adapter <- function() {
+  load_s3mpi_package <- function() {
+    if (!'s3mpi' %in% installed.packages())
+      stop("You must install and set up the s3mpi package from ",
+           "https://github.com/robertzk/s3mpi", call. = FALSE)
+    require(s3mpi)
+  }
+
+  read_function <- function(opts) {
+    load_s3mpi_package()
+
+    # If the user provided an s3 path, like "s3://somebucket/some/path/", 
+    # pass it along to the s3read function.
+    args <- list(name = opts$resource)
+    if (is.element('s3path', names(opts))) args$.path <- opts$s3path
+    do.call(s3mpi::s3read, args)
+  }
+
+  write_function <- function(object, opts) {
+    load_s3mpi_package()
+
+    # Hack for model object requiring customized
+    # serializer, e.g., xgb.Booster
+    if (is(object, 'tundraContainer') &&
+        is(object$output$model, 'xgb.Booster')) {
+			object <- serialize_xgb_object(object)
+    }
+
+    # If the user provided an s3 path, like "s3://somebucket/some/path/", 
+    # pass it along to the s3read function.
+    args <- list(obj = list(data = object$output$options$data, 
+                            label = object$output$options$label), 
+                 name = opts$resource)
+    if (is.element('s3path', names(opts))) args$.path <- paste(opts$s3path, "data", "label", 
+        sep = "_")
+    do.call(s3mpi::s3store, args)
+  }
+
+  format_function <- function(opts) {
+    environment(common_file_formatter) <- environment()
+    opts <- common_file_formatter(opts)
+    if (is.element('bucket', names(opts)))
+      opts$s3path <- paste0("s3://", opts$bucket, "/")
+    opts
+  }
+
+  # TODO: (RK) Read default_options in from config, so a user can
+  # specify default options for various adapters.
+  adapter(read_function, write_function, format_function = format_function,
+          default_options = list(), keyword = 's3')
+}
 # A reference class to abstract importing and exporting data.
 adapter <- setRefClass('adapter',
   list(.read_function = 'function', .write_function = 'function',
@@ -304,6 +364,6 @@ adapter <- setRefClass('adapter',
 )
 
 built_in_adapters <- list(file = construct_file_adapter,
-                          s3 = construct_s3_adapter,
-                          r = construct_R_adapter)
-
+                          s3   = construct_s3_adapter,
+                          r    = construct_R_adapter,
+                          data = construct_data_adapter)
