@@ -35,7 +35,6 @@ fetch_adapter <- function(keyword) {
       (!is_built_in && fetch_custom_adapter(keyword, modified_check = TRUE))) {
     # If this adapter is not cached, or is a custom adapter and has been
     # modified since being cached, re-compute it.
-
     if (is.null(adapters)) adapters <- list()
     new_adapter <-
       if (is.element(keyword, names(built_in_adapters)))
@@ -216,6 +215,17 @@ construct_s3_adapter <- function() {
     if (is(object, 'tundraContainer') &&
         is(object$output$model, 'xgb.Booster')) {
 			object <- serialize_xgb_object(object)
+      data_restore_on_exit <- object$object$container$output$options$data
+      label_restore_on_exit <- object$object$container$output$options$label
+      on.exit(object$object$container$output$options$data <- data_restore_on_exit, add = TRUE)
+      on.exit(object$object$container$output$opitons$label <- label_restore_on_exit, add = TRUE)
+      object$object$container$output$options$data <- NULL
+      object$object$container$output$options$label <- NULL
+    } else {
+      data_restore_on_exit <- object$output$options$data
+      label_restore_on_exit <- object$output$options$label
+      on.exit(object$output$options$data <- data_restore_on_exit, add = TRUE)
+      on.exit(object$output$opitons$label <- label_restore_on_exit, add = TRUE)
       object$output$options$data <- NULL
       object$output$options$label <- NULL
     }
@@ -291,10 +301,12 @@ construct_data_adapter <- function() {
     if (is(object, 'tundraContainer') &&
         is(object$output$model, 'xgb.Booster')) {
 			object <- serialize_xgb_object(object)
+      object <- list(data = object$object$container$output$options$data, 
+                     label = object$object$container$output$options$label)
+    } else {
       object <- list(data = object$output$options$data, 
                      label = object$output$options$label)
     }
-
     # If the user provided an s3 path, like "s3://somebucket/some/path/", 
     # pass it along to the s3read function.
     args <- list(obj = object, name = opts$resource)
@@ -313,7 +325,7 @@ construct_data_adapter <- function() {
   # TODO: (RK) Read default_options in from config, so a user can
   # specify default options for various adapters.
   adapter(read_function, write_function, format_function = format_function,
-          default_options = list(), keyword = 's3')
+          default_options = list(), keyword = 'data')
 }
 # A reference class to abstract importing and exporting data.
 adapter <- setRefClass('adapter',
