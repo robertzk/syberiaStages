@@ -236,18 +236,19 @@ construct_s3_adapter <- function() {
     # serializer, e.g., xgb.Booster
     if (is(object, 'tundraContainer') &&
         is(object$output$model, 'xgb.Booster')) {
-			object <- serialize_xgb_object(object)
-      if (name_exists("object$object$container$output$options$data")) {
-        data_restore_on_exit <- object$object$container$output$options$data
-        on.exit(object$object$container$output$options$data <- data_restore_on_exit, add = TRUE)
-        object$object$container$output$options$data <- NULL
+      obj <- serialize_xgb_object(object)
+      if (name_exists("object$output$options$data")) {
+        data_restore_on_exit <- object$output$options$data
+        on.exit(object$output$options$data <- data_restore_on_exit, add = TRUE)
+        obj$object$container$output$options$data <- NULL
       }
-      if (name_exists("object$object$container$output$options$label")) {
-        label_restore_on_exit <- object$object$container$output$options$label
-        on.exit(object$object$container$output$opitons$label <- label_restore_on_exit, add = TRUE)
-        object$object$container$output$options$label <- NULL
+      if (name_exists("object$output$options$label")) {
+        label_restore_on_exit <- object$output$options$label
+        on.exit(object$output$options$label <- label_restore_on_exit, add = TRUE)
+        obj$object$container$output$options$label <- NULL
       }
     } else {
+      obj <- object
       if (name_exists("object$output$options$data")) {
         data_restore_on_exit <- object$output$options$data
         on.exit(object$output$options$data <- data_restore_on_exit, add = TRUE)
@@ -255,14 +256,14 @@ construct_s3_adapter <- function() {
       }
       if (name_exists("object$output$options$label")) {
         label_restore_on_exit <- object$output$options$label
-        on.exit(object$output$opitons$label <- label_restore_on_exit, add = TRUE)
+        on.exit(object$output$options$label <- label_restore_on_exit, add = TRUE)
         object$output$options$label <- NULL
       }
-    }
+    } 
 
     # If the user provided an s3 path, like "s3://somebucket/some/path/", 
     # pass it along to the s3read function.
-    args <- list(obj = object, name = opts$resource)
+    args <- list(obj = obj, name = opts$resource)
     if (is.element('s3path', names(opts))) args$.path <- opts$s3path
     do.call(s3mpi::s3store, args)
   }
@@ -301,24 +302,14 @@ construct_s3data_adapter <- function() {
   write_function <- function(object, opts) {
     common_s3mpi_package_loader()
 
-    # Hack for model object requiring customized
-    # serializer, e.g., xgb.Booster
-    if (is(object, 'tundraContainer') &&
-        is(object$output$model, 'xgb.Booster')) {
-			object <- serialize_xgb_object(object)
-      object <- list(data = switch(1 + name_exists("object$object$container$output$options$data"), 
-                                   NULL, object$object$container$output$options$data), 
-                     label = switch(1 + name_exists("object$object$container$output$options$label"),
-                                   NULL, object$object$container$output$options$label))
-    } else {
-      object <- list(data = switch(1 + name_exists("object$output$options$data"), 
-                                   NULL, object$output$options$data), 
-                     label = switch(1 + name_exists("object$output$options$label"), 
-                                    NULL, object$output$options$label))
-    }
+    obj <- list(data = switch(1 + name_exists("object$output$options$data"), 
+                              NULL, object$output$options$data), 
+                label = switch(1 + name_exists("object$output$options$label"), 
+                               NULL, object$output$options$label))
+
     # If the user provided an s3 path, like "s3://somebucket/some/path/", 
     # pass it along to the s3read function.
-    args <- list(obj = object, name = opts$resource)
+    args <- list(obj = obj, name = opts$resource)
     if (is.element('s3path', names(opts))) args$.path <- opts$s3path
     do.call(s3mpi::s3store, args)
   }

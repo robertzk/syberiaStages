@@ -66,7 +66,7 @@ serialize_xgb_object <- function(object) {
   on.exit(unlink(file_save), add = TRUE)
   xgboost::xgb.save(object$output$model, file_save)
   stopifnot(!is.na(as.integer(file.info(file_save)$size)))
-  object$output$model <- NULL
+  object$output$model <- structure(class = "xgb.Booster", NULL)
   con <- file(file_save, 'rb')
   on.exit(close(con), add = TRUE)
   invisible(structure(
