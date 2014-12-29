@@ -58,42 +58,6 @@ parse_custom_functions <- function(functions, provided_env, type,
   provided_fns
 }
 
-#' Helper function to serialize a tundraContainer of xgboost model object
-#'
-#' TODO: (RK) Refactor this function out of the package.
-serialize_xgb_object <- function(object) {
-	file_save <- tempfile()
-  on.exit(unlink(file_save), add = TRUE)
-  xgboost::xgb.save(object$output$model, file_save)
-  stopifnot(!is.na(as.integer(file.info(file_save)$size)))
-  object$output$model <- structure(class = "xgb.Booster", NULL)
-  con <- file(file_save, 'rb')
-  on.exit(close(con), add = TRUE)
-  invisible(structure(
-    class = 'special_serialized_object', 
-    list(
-      deserialize = function(x) {
-        file_load <- tempfile()
-        on.exit(unlink(file_load), add = TRUE)
-        con <- file(file_load, 'wb')
-        on.exit(tryCatch(if (isOpen(con)) close(con), 
-          error = function(.) message("Connection is already closed")), 
-          add = TRUE)
-        writeBin(x$xgb.bin, con, useBytes = TRUE)
-        # Do NOT remove the following line of code!!
-        # Close out the connection before reading the binary.
-        close(con)
-        x$container$output$model <- xgboost::xgb.load(file_load)
-        invisible(x$container)
-      }, 
-      object = list(
-       container = object, 
-       xgb.bin = readBin(con, raw(), n = file.info(file_save)$size)
-      )
-    )
-  ))
-}
-
 #' Helper function to recursively check the existence of a given name.
 #'
 #' TODO: (fye) Check if this function can be simplified.
