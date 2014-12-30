@@ -61,14 +61,14 @@ parse_custom_functions <- function(functions, provided_env, type,
 #' Helper function to recursively check the existence of a given name.
 #'
 #' TODO: (fye) Check if this function can be simplified.
-name_exists <- function(object_name, envir = parent.frame()) {
-  names <- strsplit(object_name, split="\\$")[[1]]
-  if (!names[1] %in% ls(envir, all.names = TRUE)) return(FALSE)
-  if (length(names) == 1) return(TRUE)
-  if (is.list(envir[[names[1]]]))
-    Recall(paste(names[-1], collapse = "$"), envir = list2env(envir[[names[1]]]))
-  else if (is.environment(envir[[names[1]]]))
-    Recall(paste(names[-1], collapse = "$"), envir = envir[[names[1]]])
-  else 
-    FALSE
-}
+#name_exists <- function(object_name, envir = parent.frame()) {
+#  names <- strsplit(object_name, split="\\$")[[1]]
+#  if (!names[1] %in% ls(envir, all.names = TRUE)) return(FALSE)
+#  if (length(names) == 1) return(TRUE)
+#  if (is.list(envir[[names[1]]]))
+#    Recall(paste(names[-1], collapse = "$"), envir = list2env(envir[[names[1]]]))
+#  else if (is.environment(envir[[names[1]]]))
+#    Recall(paste(names[-1], collapse = "$"), envir = envir[[names[1]]])
+#  else 
+#    FALSE
+#}
