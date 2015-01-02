@@ -168,7 +168,8 @@ evaluation_stage_validation_plot <- function(modelenv) {
 
   #assign("ret", ret, envir = .GlobalEnv)
 
-  ret$Benchmark <- unname(sapply(ret$Benchmark, function(x) strsplit(x, "[0-9]*$")[[1]]))
+#  ret$Benchmark <- unname(sapply(ret$Benchmark, function(x) strsplit(x, "[0-9]*$")[[1]]))
+  ret$Benchmark <- unname(ret$Benchmark)
   buckets <- sort(unique(ret$Benchmark))
   v_buckets <- sapply(buckets, function(x) sum(ret$Benchmark == x) / nrow(ret))
   r_buckets <- sapply(buckets, function(x) median(ret$IRR_realized[ret$Benchmark == x]))
