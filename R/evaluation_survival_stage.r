@@ -152,16 +152,18 @@ evaluation_stage_validation_plot <- function(modelenv) {
   for (i in 1:nrow(modelenv$evaluation_stage$prediction_data)) {
     row <- modelenv$evaluation_stage$prediction_data[i, , drop = FALSE]
     survival_probs <- modelenv$evaluation_stage$baseline_fcn(seq_len(row$term) / row$term)^exp(row$score)
-    irrs <- c(calc_irr(TRUE, row, survival_probs), calc_irr(FALSE, row))
+    #irrs <- c(calc_irr(TRUE, row, survival_probs), calc_irr(FALSE, row))
+    irrs <- c(calc_moneyness(TRUE, row, 0.1, survival_probs), calc_irr(FALSE, row, 0.1))
     if (length(irrs) == 2) {
-      print(paste(rep("=",80), collapse=""))
-      print(row)
-      print(irrs)
+#      print(paste(rep("=",80), collapse=""))
+#      print(row)
+#      print(irrs)
       ret[i, ] <- list(row$benchmark, irrs[2], irrs[1])
     }
   }
   ret <- ret[!is.na(ret[[1]]), ]
-  colnames(ret) <- c("Benchmark", "IRR_realized", "IRR_projected")
+  #colnames(ret) <- c("Benchmark", "IRR_realized", "IRR_projected")
+  colnames(ret) <- c("Benchmark", "moneyness_realized", "moneyness_projected")
 
   dir.create(dirname(modelenv$evaluation_stage$output), FALSE, TRUE)
   write.csv(ret, paste0(modelenv$evaluation_stage$output, '.csv'), row.names = FALSE)
@@ -186,7 +188,8 @@ evaluation_stage_validation_plot <- function(modelenv) {
        ylim = c(min(c(r_buckets, p_buckets)), max(c(r_buckets, p_buckets))), 
        type = 'l', col = 'red',
        xlab = 'Buckets',
-       ylab = 'Internal Rate of Return',
+       #ylab = 'Internal Rate of Return',
+       ylab = 'Moneyness',
        lwd = 3, cex = 2)
   lines(p_buckets, type = 'l', col = 'green',
         lwd = 3, cex = 2)

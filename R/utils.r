@@ -89,6 +89,31 @@ calc_irr <- function(projected, object, survival_probs) {
   }
 }
 
+#' Helper function to calculate a simple measurement of return 
+#' of a loan customer based on a projected survival curve or real 
+#' and a given flat forward curve.
+#'
+#' @param projected logical. Whether or not the object is based on 
+#'  projection or fact.
+#' @param object data.frame. Customer dta of a client with added 
+#'  precomputed fields.
+#' @param forward rate. Rate of flat forward curve.
+#' @return the computed simple measurement as of the day.
+calc_moneyness <- function(projected, object, forward_rate, survival_probs) {
+  if (isTRUE(projected)) {
+    # based on projection
+    stopifnot(!missing(survial_probs))
+    payments <- rep(object$installment, object$term) * survival_probs
+    (sum(payments * 1 / (1 + forward_rate / 12) ^ (1:object$term)) - object$funded_amnt) / object$funded_amnt
+  } else {
+    # based on fact
+    if (object$dep_var == 0 && object$dep_val < 1) return(NULL)
+    n_payments <- floor(object$dep_val * object$term)
+    payments <- rep(object$installment, n_payments)
+    (sum(payments * 1 / (1 + forward_rate / 12) ^ (1:n_payments)) - object$funded_amnt) / object$funded_amnt
+  }
+}
+
 #' Helper function to recursively check the existence of a given name.
 #'
 #' TODO: (fye) Check if this function can be simplified.
