@@ -102,7 +102,7 @@ calc_irr <- function(projected, object, survival_probs) {
 calc_moneyness <- function(projected, object, forward_rate, survival_probs) {
   if (isTRUE(projected)) {
     # based on projection
-    stopifnot(!missing(survial_probs))
+    stopifnot(!missing(survival_probs))
     payments <- rep(object$installment, object$term) * survival_probs
     (sum(payments * 1 / (1 + forward_rate / 12) ^ (1:object$term)) - object$funded_amnt) / object$funded_amnt
   } else {
