@@ -153,7 +153,7 @@ evaluation_stage_validation_plot <- function(modelenv) {
     row <- modelenv$evaluation_stage$prediction_data[i, , drop = FALSE]
     survival_probs <- modelenv$evaluation_stage$baseline_fcn(seq_len(row$term) / row$term)^exp(row$score)
     #irrs <- c(calc_irr(TRUE, row, survival_probs), calc_irr(FALSE, row))
-    irrs <- c(calc_moneyness(TRUE, row, 0.1, survival_probs), calc_irr(FALSE, row, 0.1))
+    irrs <- c(calc_moneyness(TRUE, row, 0.1, survival_probs), calc_moneyness(FALSE, row, 0.1))
     if (length(irrs) == 2) {
 #      print(paste(rep("=",80), collapse=""))
 #      print(row)
@@ -162,8 +162,8 @@ evaluation_stage_validation_plot <- function(modelenv) {
     }
   }
   ret <- ret[!is.na(ret[[1]]), ]
-  #colnames(ret) <- c("Benchmark", "IRR_realized", "IRR_projected")
-  colnames(ret) <- c("Benchmark", "moneyness_realized", "moneyness_projected")
+  colnames(ret) <- c("Benchmark", "IRR_realized", "IRR_projected")
+  #colnames(ret) <- c("Benchmark", "moneyness_realized", "moneyness_projected")
 
   dir.create(dirname(modelenv$evaluation_stage$output), FALSE, TRUE)
   write.csv(ret, paste0(modelenv$evaluation_stage$output, '.csv'), row.names = FALSE)
@@ -171,19 +171,24 @@ evaluation_stage_validation_plot <- function(modelenv) {
   #assign("ret", ret, envir = .GlobalEnv)
 
 #  ret$Benchmark <- unname(sapply(ret$Benchmark, function(x) strsplit(x, "[0-9]*$")[[1]]))
-  ret$Benchmark <- unname(ret$Benchmark)
-  buckets <- sort(unique(ret$Benchmark))
-  v_buckets <- sapply(buckets, function(x) sum(ret$Benchmark == x) / nrow(ret))
-  r_buckets <- sapply(buckets, function(x) median(ret$IRR_realized[ret$Benchmark == x]))
-  c_buckets <- unname(1 - quantile(1 - ret$IRR_projected, Reduce(sum, v_buckets, accumulate = TRUE)))
-  p_buckets <- sapply(seq_along(c_buckets), function(x) {
-    if (x == 1) median(ret$IRR_realized[ret$IRR_projected > c_buckets[x]])
-    else if (x == length(c_buckets)) median(ret$IRR_realized[ret$IRR_projected <= c_buckets[x-1]])
-    else median(ret$IRR_realized[ret$IRR_projected <= c_buckets[x-1] & 
-                                 ret$IRR_projected > c_buckets[x]]) 
-    })
+  prep_data <- function(ret) {
+    buckets <- sort(unique(ret$Benchmark))
+    v_buckets <- sapply(buckets, function(x) sum(ret$Benchmark == x) / nrow(ret))
+    r_buckets <- sapply(buckets, function(x) median(ret$IRR_realized[ret$Benchmark == x]))
+    c_buckets <- unname(1 - quantile(1 - ret$IRR_projected, Reduce(sum, v_buckets, accumulate = TRUE)))
+    p_buckets <- sapply(seq_along(c_buckets), function(x) {
+      if (x == 1) median(ret$IRR_realized[ret$IRR_projected > c_buckets[x]])
+      else if (x == length(c_buckets)) median(ret$IRR_realized[ret$IRR_projected <= c_buckets[x-1]])
+      else median(ret$IRR_realized[ret$IRR_projected <= c_buckets[x-1] & 
+                                  ret$IRR_projected > c_buckets[x]]) 
+      })
+    list(r_buckets, p_buckets)
+  }
 
-  png(filename = paste0(modelenv$evaluation_stage$output, '.png'))
+  pdf(filename = paste0(modelenv$evaluation_stage$output, '.pdf'))
+  data_plot <- prep_data(ret)
+  r_buckets <- data_plot[[1]]
+  p_buckets <- data_plot[[2]]
   plot(r_buckets, 
        ylim = c(min(c(r_buckets, p_buckets)), max(c(r_buckets, p_buckets))), 
        type = 'l', col = 'red',
@@ -193,12 +198,72 @@ evaluation_stage_validation_plot <- function(modelenv) {
        lwd = 3, cex = 2)
   lines(p_buckets, type = 'l', col = 'green',
         lwd = 3, cex = 2)
-  legend(4, 0, # places a legend at the appropriate place 
-         c("Lending Club Grade", "Survival Model Tier"), # puts text in the legend 
-         lty=c(1,1), # gives the legend appropriate symbols (lines)
-         lwd=c(2.5,2.5), 
-         col=c("red","green") # gives the legend lines the correct color and width
-        )
+#  legend(4, 0, # places a legend at the appropriate place 
+#         c("Lending Club Grade", "Survival Model Tier"), # puts text in the legend 
+#         lty=c(1,1), # gives the legend appropriate symbols (lines)
+#         lwd=c(2.5,2.5), 
+#         col=c("red","green") # gives the legend lines the correct color and width
+#        )
+  data_plot <- prep_data(ret[unname(sapply(ret$Benchmark, function(x) length(grep("[A-F]", x)))) == 1, , drop = FALSE])
+  r_buckets <- data_plot[[1]]
+  p_buckets <- data_plot[[2]]
+  plot(r_buckets, 
+       ylim = c(min(c(r_buckets, p_buckets)), max(c(r_buckets, p_buckets))), 
+       type = 'l', col = 'red',
+       xlab = 'Buckets',
+       #ylab = 'Internal Rate of Return',
+       ylab = 'Moneyness',
+       lwd = 3, cex = 2)
+  lines(p_buckets, type = 'l', col = 'green',
+        lwd = 3, cex = 2)
+  data_plot <- prep_data(ret[unname(sapply(ret$Benchmark, function(x) length(grep("[A-E]", x)))) == 1, , drop = FALSE])
+  r_buckets <- data_plot[[1]]
+  p_buckets <- data_plot[[2]]
+  plot(r_buckets, 
+       ylim = c(min(c(r_buckets, p_buckets)), max(c(r_buckets, p_buckets))), 
+       type = 'l', col = 'red',
+       xlab = 'Buckets',
+       #ylab = 'Internal Rate of Return',
+       ylab = 'Moneyness',
+       lwd = 3, cex = 2)
+  lines(p_buckets, type = 'l', col = 'green',
+        lwd = 3, cex = 2)
+  data_plot <- prep_data(ret[unname(sapply(ret$Benchmark, function(x) length(grep("[A-D]", x)))) == 1, , drop = FALSE])
+  r_buckets <- data_plot[[1]]
+  p_buckets <- data_plot[[2]]
+  plot(r_buckets, 
+       ylim = c(min(c(r_buckets, p_buckets)), max(c(r_buckets, p_buckets))), 
+       type = 'l', col = 'red',
+       xlab = 'Buckets',
+       #ylab = 'Internal Rate of Return',
+       ylab = 'Moneyness',
+       lwd = 3, cex = 2)
+  lines(p_buckets, type = 'l', col = 'green',
+        lwd = 3, cex = 2)
+  data_plot <- prep_data(ret[unname(sapply(ret$Benchmark, function(x) length(grep("[A-C]", x)))) == 1, , drop = FALSE])
+  r_buckets <- data_plot[[1]]
+  p_buckets <- data_plot[[2]]
+  plot(r_buckets, 
+       ylim = c(min(c(r_buckets, p_buckets)), max(c(r_buckets, p_buckets))), 
+       type = 'l', col = 'red',
+       xlab = 'Buckets',
+       #ylab = 'Internal Rate of Return',
+       ylab = 'Moneyness',
+       lwd = 3, cex = 2)
+  lines(p_buckets, type = 'l', col = 'green',
+        lwd = 3, cex = 2)
+  data_plot <- prep_data(ret[unname(sapply(ret$Benchmark, function(x) length(grep("[A-B]", x)))) == 1, , drop = FALSE])
+  r_buckets <- data_plot[[1]]
+  p_buckets <- data_plot[[2]]
+  plot(r_buckets, 
+       ylim = c(min(c(r_buckets, p_buckets)), max(c(r_buckets, p_buckets))), 
+       type = 'l', col = 'red',
+       xlab = 'Buckets',
+       #ylab = 'Internal Rate of Return',
+       ylab = 'Moneyness',
+       lwd = 3, cex = 2)
+  lines(p_buckets, type = 'l', col = 'green',
+        lwd = 3, cex = 2)
   dev.off()
   invisible(NULL)
 }
