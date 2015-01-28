@@ -232,15 +232,17 @@ construct_s3_adapter <- function() {
   write_function <- function(object, opts) {
     common_s3mpi_package_loader()
 
-    if (is.element("data", names(object$output$options))) {
-      data_restore_on_exit <- object$output$options$data
-      on.exit(object$output$options$data <- data_restore_on_exit, add = TRUE)
-      object$output$options$data <- NULL
-    }
-    if (is.element("label", names(object$output$options))) {
-      label_restore_on_exit <- object$output$options$label
-      on.exit(object$output$options$label <- label_restore_on_exit, add = TRUE)
-      object$output$options$label <- NULL
+    if (is.element('output', names(object))) {
+      if (is.element("data", names(object$output$options))) {
+        data_restore_on_exit <- object$output$options$data
+        on.exit(object$output$options$data <- data_restore_on_exit, add = TRUE)
+        object$output$options$data <- NULL
+      }
+      if (is.element("label", names(object$output$options))) {
+        label_restore_on_exit <- object$output$options$label
+        on.exit(object$output$options$label <- label_restore_on_exit, add = TRUE)
+        object$output$options$label <- NULL
+      }
     }
 
     # If the user provided an s3 path, like "s3://somebucket/some/path/", 
