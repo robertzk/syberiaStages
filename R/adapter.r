@@ -248,7 +248,12 @@ construct_s3_adapter <- function() {
     # If the user provided an s3 path, like "s3://somebucket/some/path/",
     # or wants to overwrite an already existing file by providing an option,
     # pass it along to the s3read function.
-    args <- list(obj = object, name = opts$resource, safe = opts$safe)
+    args <- list(obj = object, name = opts$resource, safe = FALSE)
+    # Set `safe = FALSE` by default for backwards compatibility.
+    # Since running syberia files is a reproducible process there
+    # shouldn't be a lot of damage done
+    # There is an option to overwrite this behavior
+    if (is.element('safe', names(opts))) args$safe <- opts$safe
     if (is.element('s3path', names(opts))) args$.path <- opts$s3path
     do.call(s3mpi::s3store, args)
   }
