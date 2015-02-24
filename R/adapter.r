@@ -186,7 +186,7 @@ construct_file_adapter <- function() {
 #'
 #' Stopped if s3mpi package is not installed.
 #'
-#' @return \code{TRUE} or \code{FALSE} indicating if loading and 
+#' @return \code{TRUE} or \code{FALSE} indicating if loading and
 #'  attaching is successful.
 common_s3mpi_package_loader <- function() {
   if (!'s3mpi' %in% installed.packages())
@@ -201,7 +201,7 @@ common_s3mpi_package_loader <- function() {
 common_s3_reader <- function(opts) {
   common_s3mpi_package_loader()
 
-  # If the user provided an s3 path, like "s3://somebucket/some/path/", 
+  # If the user provided an s3 path, like "s3://somebucket/some/path/",
   # pass it along to the s3read function.
   args <- list(name = opts$resource)
   if (is.element('s3path', names(opts))) args$.path <- opts$s3path
@@ -209,7 +209,7 @@ common_s3_reader <- function(opts) {
 }
 
 #' Common s3 formatter.
-#' 
+#'
 #' Format s3 options.
 #'
 #' @return options.
@@ -245,9 +245,10 @@ construct_s3_adapter <- function() {
       }
     }
 
-    # If the user provided an s3 path, like "s3://somebucket/some/path/", 
+    # If the user provided an s3 path, like "s3://somebucket/some/path/",
+    # or wants to overwrite an already existing file by providing an option,
     # pass it along to the s3read function.
-    args <- list(obj = object, name = opts$resource)
+    args <- list(obj = object, name = opts$resource, safe = opts$safe)
     if (is.element('s3path', names(opts))) args$.path <- opts$s3path
     do.call(s3mpi::s3store, args)
   }
@@ -286,12 +287,12 @@ construct_s3data_adapter <- function() {
   write_function <- function(object, opts) {
     common_s3mpi_package_loader()
 
-    obj <- list(data = switch(1 + is.element("data", names(object$output$options)), 
-                              NULL, object$output$options$data), 
-                label = switch(1 + is.element("label", names(object$output$options)), 
+    obj <- list(data = switch(1 + is.element("data", names(object$output$options)),
+                              NULL, object$output$options$data),
+                label = switch(1 + is.element("label", names(object$output$options)),
                                NULL, object$output$options$label))
 
-    # If the user provided an s3 path, like "s3://somebucket/some/path/", 
+    # If the user provided an s3 path, like "s3://somebucket/some/path/",
     # pass it along to the s3read function.
     args <- list(obj = obj, name = opts$resource)
     if (is.element('s3path', names(opts))) args$.path <- opts$s3path
@@ -311,7 +312,7 @@ adapter <- setRefClass('adapter',
   methods = list(
     initialize = function(read_function, write_function,
                           format_function = identity, default_options = list(),
-                          keyword = character(0)) { 
+                          keyword = character(0)) {
       .read_function <<- read_function
       .write_function <<- write_function
       .format_function <<- format_function
