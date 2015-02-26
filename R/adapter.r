@@ -151,9 +151,13 @@ construct_file_adapter <- function() {
     if ('.rds' == substring(opts$resource, nchar(opts$resource) - 3, nchar(opts$resource)))
       readRDS(opts$resource)
     else {
+      test_if_url <- function(str) {
+        grepl("^https?://", str)
+      }
+      filesource <- ifelse(test_if_url(opts$resource), getURL(opts$resource), opts$resource)
       read_csv_params <- c('header', 'sep', 'quote', 'dec', 'fill', 'comment.char',
                            'stringsAsFactors')
-      args <- list_merge(list(file = opts$resource, stringsAsFactors = FALSE),
+      args <- list_merge(list(file = filesource, stringsAsFactors = FALSE),
                          opts[read_csv_params])
       do.call(read.csv, args)
     }
