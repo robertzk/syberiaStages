@@ -253,8 +253,8 @@ construct_s3_adapter <- function() {
     # Since running syberia files is a reproducible process there
     # shouldn't be a lot of damage done
     # There is an option to overwrite this behavior
-    if (is.element('safe', names(opts))) args$safe <- opts$safe
-    if (is.element('s3path', names(opts))) args$.path <- opts$s3path
+    args$safe <- opts$safe %||% args$safe
+    args$s3path <- opts$s3path %||% args$s3path
     do.call(s3mpi::s3store, args)
   }
 
