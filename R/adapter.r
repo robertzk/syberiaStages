@@ -236,7 +236,7 @@ construct_s3_adapter <- function() {
       if (is.element("data", names(object$output$options))) {
         data_restore_on_exit <- object$output$options$data
         on.exit(object$output$options$data <- data_restore_on_exit, add = TRUE)
-        object$output$options$data <- NULL
+        object$output$options$data <<- NULL
       }
       if (is.element("label", names(object$output$options))) {
         label_restore_on_exit <- object$output$options$label
