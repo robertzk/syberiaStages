@@ -293,8 +293,8 @@ construct_s3data_adapter <- function() {
   write_function <- function(object, opts) {
     common_s3mpi_package_loader()
 
-    obj <- list(data = ifelse(is.element("data", names(try(silent = TRUE, object$output$options))), object$output$options$data, NULL),
-                label = ifelse(is.element("label", names(try(silent = TRUE, object$output$options))), object$output$options$label, NULL))
+    obj <- list(data  = if (is.element("data",  names(try(silent = TRUE, object$output$options))) object$output$options$data  else NULL,
+                label = if (is.element("label", names(try(silent = TRUE, object$output$options))) object$output$options$label else NULL)
 
     # If the user provided an s3 path, like "s3://somebucket/some/path/",
     # pass it along to the s3read function.
