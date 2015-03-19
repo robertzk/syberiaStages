@@ -232,7 +232,7 @@ construct_s3_adapter <- function() {
   write_function <- function(object, opts) {
     common_s3mpi_package_loader()
 
-    if (is.element('output', names(object))) {
+    if (is.element('output', ls(object))) {
       if (is.element("data", names(object$output$options))) {
         data_restore_on_exit <- object$output$options$data
         on.exit(object$output$options$data <- data_restore_on_exit, add = TRUE)
