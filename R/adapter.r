@@ -232,22 +232,15 @@ construct_s3_adapter <- function() {
   write_function <- function(object, opts) {
     common_s3mpi_package_loader()
 
-    print("About to mask training data for xgb")
-    
-    if (is.element('output', names(object))) {
-      print("oh I have output under object")
-      if (is.element("data", names(object$output$options))) {
-        print("oh I have data under object$output$options")
-        data_restore_on_exit <- object$output$options$data
-        on.exit(object$output$options$data <- data_restore_on_exit, add = TRUE)
-        object$output$options$data <- NULL
+    if (name_exists("object$output$options$data")) {
+      data_restore_on_exit <- object$output$options$data
+      on.exit(object$output$options$data <- data_restore_on_exit, add = TRUE)
+      object$output$options$data <- NULL
       }
-      if (is.element("label", names(object$output$options))) {
-        print("oh I have label under object$output$options")
-        label_restore_on_exit <- object$output$options$label
-        on.exit(object$output$options$label <- label_restore_on_exit, add = TRUE)
-        object$output$options$label <- NULL
-      }
+    if (name_exists("object$output$options$label")) {
+      label_restore_on_exit <- object$output$options$label
+      on.exit(object$output$options$label <- label_restore_on_exit, add = TRUE)
+      object$output$options$label <- NULL
     }
 
     # If the user provided an s3 path, like "s3://somebucket/some/path/",
@@ -261,9 +254,7 @@ construct_s3_adapter <- function() {
     args$safe   <- opts$safe %||% args$safe
     args$.path  <- opts$s3path %||% args$s3path
     args$s3path <- NULL
-    print("s3store model object")
     do.call(s3mpi::s3store, args)
-    print("done")
   }
 
  # TODO: (RK) Read default_options in from config, so a user can
@@ -300,12 +291,10 @@ construct_s3data_adapter <- function() {
   write_function <- function(object, opts) {
     common_s3mpi_package_loader()
 
-    print("I am here once")
-    print(names(object$output$options))
-    print(dim(object$output$options$data))
-    print(dim(object$output$options$label))
-    obj <- list(data  = if (is.element("data",  names(try(silent = TRUE, object$output$options)))) object$output$options$data else NULL,
-                label = if (is.element("label", names(try(silent = TRUE, object$output$options)))) object$output$options$label else NULL)
+    obj <- list(data  = if (name_exists("object$output$options$data")) 
+      object$output$options$data else NULL,
+                label = if (name_exists("object$output$options$label")) 
+      object$output$options$label else NULL)
 
     # If the user provided an s3 path, like "s3://somebucket/some/path/",
     # pass it along to the s3read function.
