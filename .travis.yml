@@ -4,6 +4,7 @@ before_install:
 - chmod 755 ./travis-tool.sh
 - "./travis-tool.sh bootstrap"
 install:
+- "./travis-tool.sh install_github robertzk/s3mpi"
 - "./travis-tool.sh install_deps"
 - "./travis-tool.sh install_r devtools microbenchmark knitr"
 - "./travis-tool.sh install_r arules pbapply memoise stringr testthat"
