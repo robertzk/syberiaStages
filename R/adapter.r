@@ -252,7 +252,7 @@ construct_s3_adapter <- function() {
     # or wants to overwrite an already existing file by providing an option,
     # pass it along to the s3read function.
     args <- list(obj = object, name = opts$resource, safe = FALSE,
-      num_tries = opts$num_tries %||% 0)
+      num_retries = opts$num_retries %||% 0)
     # Set `safe = FALSE` by default for backwards compatibility.
     # Since running syberia files is a reproducible process there
     # shouldn't be a lot of damage done
