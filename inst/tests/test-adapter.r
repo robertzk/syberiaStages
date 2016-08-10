@@ -33,11 +33,11 @@ describe("RDS2 functionality", {
     ))
     file <- tempfile(fileext = ".rds")
     RDS2::saveRDS(rds2_object, file)
-    with_mock(has_RDS2 = function() TRUE, {
+    with_mock(`syberiaStages:::has_RDS2` = function() TRUE, {
       object <- file_adapter$read(file)
       expect_false("RDS2.serialize" %in% names(attributes(object)))
     })
-    with_mock(has_RDS2 = function() FALSE, {
+    with_mock(`syberiaStages:::has_RDS2` = function() FALSE, {
       object <- file_adapter$read(file)
       expect_true("RDS2.serialize" %in% names(attributes(object)))
     })
