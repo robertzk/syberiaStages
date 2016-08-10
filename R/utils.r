@@ -74,6 +74,6 @@ parse_custom_functions <- function(functions, provided_env, type,
 #}
 
 has_RDS2 <- function() {
-  "RDS2" %in% installed.packages()[1, ]
+  "RDS2" %in% installed.packages()[, 1]
 }
 
