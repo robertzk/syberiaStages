@@ -1,7 +1,7 @@
 Package: syberiaStages
 Type: Package
 Title: Syberia Stages
-Version: 0.2.3.9001
+Version: 0.2.3.9002
 Description: Syberia provides an opinionated unified framework for
     fast iteration on classifier development and deployment. It is
     founded on convention over configuration and aims to solve the
@@ -21,9 +21,17 @@ Imports:
     syberiaStructure,
     statsUtils
 Suggests:
-    s3mpi (>= 0.2.20),
     mungebits,
+    s3mpi (>= 0.2.20),
+    RDS2,
     testthatsomemore
+Remotes:
+    syberia/mungebits,
+    robertzk/RDS2,
+    robertzk/s3mpi,
+    syberia/stagerunner,
+    robertzk/statsUtils,
+    robertzk/syberiaStructure
 License: MIT
 LazyData: true
 Roxygen: list(wrap = FALSE)

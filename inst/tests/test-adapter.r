@@ -22,6 +22,12 @@ test_that('it can write using a simple example adapter correctly', {
   expect_identical(a$read('x'), "test")
 })
 
+describe("RDS2 functionality", {
+  test_that("it can read an RDS2 object correctly", {
+
+  })
+})
+
 test_that('it formats options according to a formatting function', {
   formatter <- function(opts) list(file = opts$resource)
   a <- adapter(identity, identity, formatter)

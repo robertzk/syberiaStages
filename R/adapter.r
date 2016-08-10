@@ -148,9 +148,11 @@ construct_file_adapter <- function() {
   read_function <- function(opts) {
     # If the user provided any of the options below in their syberia model,
     # pass them along to read.csv
-    if ('.rds' == substring(opts$resource, nchar(opts$resource) - 3, nchar(opts$resource)))
-      readRDS(opts$resource)
-    else {
+    if ('.rds' == substring(opts$resource, nchar(opts$resource) - 3, nchar(opts$resource))) {
+      if (has_RDS2()) {
+        RDS2::readRDS(opts$resource)
+      }
+    } else {
       test_if_url <- function(str) grepl("^https?://", str)
       filesource <- ifelse(test_if_url(opts$resource), getURL(opts$resource), opts$resource)
       read_csv_params <- c('header', 'sep', 'quote', 'dec', 'fill', 'comment.char',
@@ -174,7 +176,8 @@ construct_file_adapter <- function() {
       save_rds_params <- setdiff(names(formals(saveRDS)), c('object', 'file'))
       args <- list_merge(list(object = object, file = opts$resource),
                          opts[save_rds_params])
-      do.call(saveRDS, args)
+      method <- if (has_RDS2()) RDS2::saveRDS else saveRDS
+      do.call(method, args)
     }
   }
 
