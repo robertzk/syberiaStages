@@ -22,6 +22,28 @@ test_that('it can write using a simple example adapter correctly', {
   expect_identical(a$read('x'), "test")
 })
 
+describe("RDS2 functionality", {
+  library(RDS2)
+
+  test_that("it can read an RDS2 object correctly", {
+    file_adapter <- construct_file_adapter()
+    rds2_object <- structure("foo", RDS2.serialize = list(
+      read  = function(obj) paste0(obj, "bar"),
+      write = identity
+    ))
+    file <- tempfile(fileext = ".rds")
+    RDS2::saveRDS(rds2_object, file)
+    with_mock(`syberiaStages:::has_RDS2` = function() TRUE, {
+      object <- file_adapter$read(file)
+      expect_false("RDS2.serialize" %in% names(attributes(object)))
+    })
+    with_mock(`syberiaStages:::has_RDS2` = function() FALSE, {
+      object <- file_adapter$read(file)
+      expect_true("RDS2.serialize" %in% names(attributes(object)))
+    })
+  })
+})
+
 test_that('it formats options according to a formatting function', {
   formatter <- function(opts) list(file = opts$resource)
   a <- adapter(identity, identity, formatter)
