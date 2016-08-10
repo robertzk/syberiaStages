@@ -26,7 +26,7 @@ Suggests:
     RDS2,
     testthatsomemore
 Remotes:
-    syberia/mungebits,
+    robertzk/mungebits,
     robertzk/RDS2,
     robertzk/s3mpi,
     syberia/stagerunner,

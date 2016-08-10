@@ -23,8 +23,24 @@ test_that('it can write using a simple example adapter correctly', {
 })
 
 describe("RDS2 functionality", {
-  test_that("it can read an RDS2 object correctly", {
+  library(RDS2)
 
+  test_that("it can read an RDS2 object correctly", {
+    file_adapter <- construct_file_adapter()
+    rds2_object <- structure("foo", RDS2.serialize = list(
+      read  = function(obj) paste0(obj, "bar"),
+      write = identity
+    ))
+    file <- tempfile(fileext = ".rds")
+    RDS2::saveRDS(rds2_object, file)
+    with_mock(has_RDS2 = function() TRUE, {
+      object <- file_adapter$read(file)
+      expect_false("RDS2.serialize" %in% names(attributes(object)))
+    })
+    with_mock(has_RDS2 = function() FALSE, {
+      object <- file_adapter$read(file)
+      expect_true("RDS2.serialize" %in% names(attributes(object)))
+    })
   })
 })
 

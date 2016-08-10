@@ -151,6 +151,8 @@ construct_file_adapter <- function() {
     if ('.rds' == substring(opts$resource, nchar(opts$resource) - 3, nchar(opts$resource))) {
       if (has_RDS2()) {
         RDS2::readRDS(opts$resource)
+      } else {
+        readRDS(opts$resource)
       }
     } else {
       test_if_url <- function(str) grepl("^https?://", str)
@@ -176,8 +178,11 @@ construct_file_adapter <- function() {
       save_rds_params <- setdiff(names(formals(saveRDS)), c('object', 'file'))
       args <- list_merge(list(object = object, file = opts$resource),
                          opts[save_rds_params])
-      method <- if (has_RDS2()) RDS2::saveRDS else saveRDS
-      do.call(method, args)
+      if (has_RDS2()) {
+        do.call(RDS2::saveRDS, args)
+      } else {
+        do.call(saveRDS, args)
+      }
     }
   }
 
