@@ -26,7 +26,7 @@ model_stage <- function(model_parameters) {
     if (any(vapply(badv <- tolower(webbank_variables), is.element,
                    logical(1), set = allv <- tolower(colnames(modelenv$data))))) {
       stop("You are using disallowed webbank variables: \n",
-           paste(intersect(badv, allv), collapse = "\n")),
+           paste(intersect(badv, allv), collapse = "\n"),
            call. = FALSE)
     }
 
