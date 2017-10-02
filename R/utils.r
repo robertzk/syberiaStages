@@ -47,7 +47,7 @@ parse_custom_functions <- function(functions, provided_env, type,
     # TODO: (RK) Refactor this to be more careful about idempotent resources.
     error <- function(snip = 'a') paste0("The custom ", resource_type, " in ",
       "lib/", resource_type, "s/", type, ".R should define ", snip, " '",
-      director:::colourise(function_type, 'green'), "' function.")
+      function_type, "' function.")
     if (length(fn) == 0 && identical(strict, TRUE)) stop(error(), call. = FALSE)
     else if (length(fn) > 1)
       stop(error('only one'), " Instead, you defined ", length(fn), ", namely: ",
